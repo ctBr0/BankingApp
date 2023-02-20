@@ -205,7 +205,15 @@ int main( int argc, char *argv[] )
         }
         else if (strcmp(packet.command_choice,"exit") == 0)
         {
-            printf("asdfadsf");
+            for (int i = 0; i < currentArraySize; i++)
+            {
+                if (strcmp(packet.customer_info.name, CustomerInfoArray[i].name) == 0)
+                {
+                    packet.status = 1;
+                    if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
+                        DieWithError( "server: sendto() sent a different number of bytes than expected" );
+                }
+            }
         }
         else
         {
