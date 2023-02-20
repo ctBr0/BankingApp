@@ -17,13 +17,13 @@ struct CustomerInfo
     double balance;
     char* client_ip_addr;
     int port_to_bank;
-    int port_to_other_CustomerInfos;
+    int port_to_other_customers;
 };
 
 struct Cohort
 {
     char* founder_name;
     int size;
-    struct CustomerInfo customer_info;
+    struct CustomerInfo* customer_info_array;
 };
 

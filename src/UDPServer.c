@@ -9,6 +9,7 @@
 // application programs.
 #include <stdio.h>      // for printf() and fprintf()
 #include <stdbool.h>
+#include <time.h>
 #include <sys/socket.h> // for socket() and bind()
 #include <arpa/inet.h>  // for sockaddr_in and inet_ntoa()
 #include <stdlib.h>     // for atoi() and exit()
@@ -35,7 +36,7 @@ int main( int argc, char *argv[] )
 
     struct Packet packet;
     struct CustomerInfo* CustomerInfoArray;
-    int currentSize;
+    int currentArraySize;
     int used = 0;
     bool failed;
 
@@ -72,7 +73,9 @@ int main( int argc, char *argv[] )
 
         // Block until receive message from a client
         if( ( recvMsgSize = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, &cliAddrLen )) < 0 )
+        {
             DieWithError( "server: recvfrom() failed" );
+        }
 
         // open an account
         if (strcmp(packet.command_choice,"open") == 0)
@@ -88,29 +91,60 @@ int main( int argc, char *argv[] )
 
             if (failed == false)
             {
-                CustomerInfoArray = (struct CustomerInfo*)realloc(CustomerInfoArray, currentSize + sizeof(struct CustomerInfo));
-                currentSize += sizeof(struct CustomerInfo);
+                CustomerInfoArray = (struct CustomerInfo*)realloc(CustomerInfoArray, currentArraySize + sizeof(struct CustomerInfo));
+                currentArraySize += sizeof(struct CustomerInfo);
                 CustomerInfoArray[used] = packet.customer_info;
                 used++;
 
-                printf( "server: new CustomerInfo added to database\n");
+                printf( "server: new customer added to database\n");
             }
             else
             {
-                printf( "server: CustomerInfo already exists\n");
+                printf( "server: customer already exists\n");
             }
         }
-        elif (strcmp(packet.command_choice,"new_cohort") == 0)
+        else if (strcmp(packet.command_choice,"new_cohort") == 0)
         {
+            if (currentArraySize < packet.cohort.size)
+            {
+                failed = true;
+                printf( "server: not enough customers\n");
+            }
+            else
+            {
+                int index;
+                srand(time(NULL));
+                packet.cohort.customer_info_array = (struct CustomerInfo*)malloc(packet.cohort.size * sizeof(struct CustomerInfo));
 
+                int randArray[packet.cohort.size];
+                for (int i = 0; i < packet.cohort.size; i++)
+                {
+                    randArray[i] = i;
+                }
+                for (int i = 0; i < packet.cohort.size; i++)
+                {
+                    int temp = randArray[i];
+                    int randomIndex = rand() % packet.cohort.size;
+
+                    randArray[i] = randArray[randomIndex];
+                    randArray[randomIndex] = temp;
+                }
+
+                for (int i = 0; i < packet.cohort.size; i++)
+                {
+                    packet.cohort.customer_info_array[i] = CustomerInfoArray[randArray[index]];
+                }
+
+                printf( "server: new cohort created\n");
+            }
         }
-        elif (strcmp(packet.command_choice,"delete_cohort") == 0)
+        else if (strcmp(packet.command_choice,"delete_cohort") == 0)
         {
-
+            printf("asdfadsf");
         }
-        elif (strcmp(packet.command_choice,"exit") == 0)
+        else if (strcmp(packet.command_choice,"exit") == 0)
         {
-
+            printf("asdfadsf");
         }
         else
         {
@@ -120,14 +154,16 @@ int main( int argc, char *argv[] )
         if (failed == false)
         {
             // Send received datagram back to the client
-            if( sendto( sock, SUCCESS, sizeof(SUCCESS), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(SUCCESS) )
+            packet.status = 1;
+            if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
                 DieWithError( "server: sendto() sent a different number of bytes than expected" );
 
         }
         else
         {
             // Send received datagram back to the client
-            if( sendto( sock, FAILURE, sizeof(FAILURE), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(FAILURE) )
+            packet.status = 0;
+            if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
                 DieWithError( "server: sendto() sent a different number of bytes than expected" );
         }
 

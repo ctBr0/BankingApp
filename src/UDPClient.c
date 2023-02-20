@@ -36,12 +36,12 @@ int main( int argc, char *argv[] )
     char *servIP;                    // IP address of server
     int respStringLen;               // Length of received response
 
-    char* CustomerInfo_name;
+    char* name;
     double balance;
     char* client_ip_address;
     int port_to_bank;
     int port_to_other_CustomerInfos;
-
+    int cohort_size;
 
     if (argc < 3)
     {
@@ -72,18 +72,18 @@ int main( int argc, char *argv[] )
             exit( 1 );
         }
     }
-    elif (argv[0] == "new-cohort")
+    else if (argv[0] == "new-cohort")
     {
         if (argc == 5)
         {
 
         }
     }
-    elif (argv[0] == "delete-cohort")
+    else if (argv[0] == "delete-cohort")
     {
 
     }
-    elif (argv[0] == "exit")
+    else if (argv[0] == "exit")
     {
 
     }
@@ -125,7 +125,7 @@ int main( int argc, char *argv[] )
             case 1:
 
             printf( "client: Enter your name\n");
-            scanf("%s", &CustomerInfo_name);
+            scanf("%s", &name);
             printf( "client: Enter your balance\n");
             scanf("%d", &balance);
             printf( "client: Enter your ip address\n");
@@ -135,7 +135,7 @@ int main( int argc, char *argv[] )
             printf( "client: Enter your port number to other CustomerInfos\n");
             scanf("%d", &port_to_other_CustomerInfos);
 
-            struct CustomerInfo customer_info = { CustomerInfo_name, balance, client_ip_address, port_to_bank, port_to_other_CustomerInfos };
+            struct CustomerInfo customer_info = { name, balance, client_ip_address, port_to_bank, port_to_other_CustomerInfos };
 
             struct Packet packet = 
             {
@@ -155,16 +155,52 @@ int main( int argc, char *argv[] )
 
             fromSize = sizeof( fromAddr );
 
-            if( ( respStringLen = recvfrom( sock, SUCCESS, sizeof(SUCCESS), 0, (struct sockaddr *) &fromAddr, &fromSize ) ) > sizeof(SUCCESS) )
+            if( ( respStringLen = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, &fromSize ) ) > sizeof(struct Packet) )
                 DieWithError( "client: recvfrom() failed" );
-
 
             if( servAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr )
                 DieWithError( "client: Error: received a packet from unknown source.\n" );
-
-            printf( "client: account created successfully\n" );
-       		
+            
+            if (packet.status == 1)
+            {
+                printf( "client: account created successfully\n" );
+            }
+            else
+            {
+                printf( "client: failed to create account\n");
+            }
+            
             break;
+
+            // Create a cohort
+            case 2:
+
+            printf( "client: Enter your name\n");
+            scanf("%s", &name);
+            printf( "client: Enter the total number of people in the cohort\n");
+            scanf("%d", &cohort_size);
+            while (cohort_size < 2)
+            {
+                printf( "client: invalid cohort size\n" );
+                printf( "client: Enter the total number of people in the cohort\n" );
+                scanf("%d", &cohort_size);
+            }
+
+            struct Cohort cohort = { name, cohort_size, (struct CustomerInfo*)malloc(0) };
+
+            struct Packet packet =
+            {
+                0,
+                "new_cohort",
+                (const struct CustomerInfo){ 0 },
+                cohort
+            };
+
+            // Send the struct to the server
+            if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &servAddr, sizeof( servAddr ) ) != sizeof(struct Packet) )
+            {
+                DieWithError( "client: sendto() sent a different number of bytes than expected" );
+            }
 
         }
 
