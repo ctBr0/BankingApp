@@ -36,11 +36,11 @@ int main( int argc, char *argv[] )
     char *servIP;                    // IP address of server
     int respStringLen;               // Length of received response
 
-    char* customer_name;
+    char* CustomerInfo_name;
     double balance;
     char* client_ip_address;
     int port_to_bank;
-    int port_to_other_customers;
+    int port_to_other_CustomerInfos;
 
 
     if (argc < 3)
@@ -59,16 +59,16 @@ int main( int argc, char *argv[] )
     {
         if (argc == 8)
         {
-            struct customer customer = { argv[1], atof(argv[2]), argv[3], atoi(argv[4]), atoi(argv[5]) };
+            struct CustomerInfo CustomerInfo = { argv[1], atof(argv[2]), argv[3], atoi(argv[4]), atoi(argv[5]) };
 
             servIP = argv[6];
             servPort = stoi(argv[7]);
 
-            printf( "client: Arguments passed: name %s, balance %d, client ip address %s, port to bank %d, port to other customers %d, server ip address %s, server port %d\n", argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7]);
+            printf( "client: Arguments passed: name %s, balance %d, client ip address %s, port to bank %d, port to other CustomerInfos %d, server ip address %s, server port %d\n", argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7]);
         }
         else
         {
-            fprintf( stderr, "Usage: %s <customer-name> <balance> <client-ip-address> <port-to-bank> <port-to-other-customers> <server-ip-address> <server-port>\n", argv[0] );
+            fprintf( stderr, "Usage: %s <CustomerInfo-name> <balance> <client-ip-address> <port-to-bank> <port-to-other-CustomerInfos> <server-ip-address> <server-port>\n", argv[0] );
             exit( 1 );
         }
     }
@@ -125,20 +125,20 @@ int main( int argc, char *argv[] )
             case 1:
 
             printf( "client: Enter your name\n");
-            scanf("%s", &customer_name);
+            scanf("%s", &CustomerInfo_name);
             printf( "client: Enter your balance\n");
             scanf("%d", &balance);
             printf( "client: Enter your ip address\n");
             scanf("%d", &client_ip_address);
             printf( "client: Enter your port number to the bank\n");
             scanf("%d", &port_to_bank);
-            printf( "client: Enter your port number to other customers\n");
-            scanf("%d", &port_to_other_customers);
+            printf( "client: Enter your port number to other CustomerInfos\n");
+            scanf("%d", &port_to_other_CustomerInfos);
 
-            struct customer customer = { customer_name, balance, client_ip_address, port_to_bank, port_to_other_customers };
+            struct CustomerInfo CustomerInfo = { CustomerInfo_name, balance, client_ip_address, port_to_bank, port_to_other_CustomerInfos };
 
             // Send the struct to the server
-            if( sendto( sock, &customer, sizeof(struct customer), 0, (struct sockaddr *) &servAddr, sizeof( servAddr ) ) != sizeof(struct customer) )
+            if( sendto( sock, &CustomerInfo, sizeof(struct CustomerInfo), 0, (struct sockaddr *) &servAddr, sizeof( servAddr ) ) != sizeof(struct CustomerInfo) )
             {
                 DieWithError( "client: sendto() sent a different number of bytes than expected" );
             }
