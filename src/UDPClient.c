@@ -135,10 +135,18 @@ int main( int argc, char *argv[] )
             printf( "client: Enter your port number to other CustomerInfos\n");
             scanf("%d", &port_to_other_CustomerInfos);
 
-            struct CustomerInfo CustomerInfo = { CustomerInfo_name, balance, client_ip_address, port_to_bank, port_to_other_CustomerInfos };
+            struct CustomerInfo customer_info = { CustomerInfo_name, balance, client_ip_address, port_to_bank, port_to_other_CustomerInfos };
+
+            struct Packet packet = 
+            {
+                0,
+                "open",
+                customer_info,
+                (const struct Cohort){ 0 }
+            };
 
             // Send the struct to the server
-            if( sendto( sock, &CustomerInfo, sizeof(struct CustomerInfo), 0, (struct sockaddr *) &servAddr, sizeof( servAddr ) ) != sizeof(struct CustomerInfo) )
+            if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &servAddr, sizeof( servAddr ) ) != sizeof(struct Packet) )
             {
                 DieWithError( "client: sendto() sent a different number of bytes than expected" );
             }

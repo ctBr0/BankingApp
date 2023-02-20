@@ -33,7 +33,7 @@ int main( int argc, char *argv[] )
     unsigned short servPort;     // Server port
     int recvMsgSize;                 // Size of received message
 
-    struct CustomerInfo CustomerInfo;
+    struct Packet packet;
     struct CustomerInfo* CustomerInfoArray;
     int currentSize;
     int used = 0;
@@ -71,27 +71,54 @@ int main( int argc, char *argv[] )
         cliAddrLen = sizeof( clientAddr );
 
         // Block until receive message from a client
-        if( ( recvMsgSize = recvfrom( sock, &CustomerInfo, sizeof(struct CustomerInfo), 0, (struct sockaddr *) &clientAddr, &cliAddrLen )) < 0 )
+        if( ( recvMsgSize = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, &cliAddrLen )) < 0 )
             DieWithError( "server: recvfrom() failed" );
 
-        for (int i = 0; i < used; i++)
+        // open an account
+        if (strcmp(packet.command_choice,"open") == 0)
         {
-            if (CustomerInfoArray[i].name == CustomerInfo.name)
+            for (int i = 0; i < used; i++)
             {
-                failed = true;
-                break;
+                if (CustomerInfoArray[i].name == packet.customer_info.name)
+                {
+                    failed = true;
+                    break;
+                }
             }
+
+            if (failed == false)
+            {
+                CustomerInfoArray = (struct CustomerInfo*)realloc(CustomerInfoArray, currentSize + sizeof(struct CustomerInfo));
+                currentSize += sizeof(struct CustomerInfo);
+                CustomerInfoArray[used] = packet.customer_info;
+                used++;
+
+                printf( "server: new CustomerInfo added to database\n");
+            }
+            else
+            {
+                printf( "server: CustomerInfo already exists\n");
+            }
+        }
+        elif (strcmp(packet.command_choice,"new_cohort") == 0)
+        {
+
+        }
+        elif (strcmp(packet.command_choice,"delete_cohort") == 0)
+        {
+
+        }
+        elif (strcmp(packet.command_choice,"exit") == 0)
+        {
+
+        }
+        else
+        {
+            exit(1); // never gets here
         }
 
         if (failed == false)
         {
-            CustomerInfoArray = (struct CustomerInfo*)realloc(CustomerInfoArray, currentSize + sizeof(struct CustomerInfo));
-            currentSize += sizeof(struct CustomerInfo);
-            CustomerInfoArray[used] = CustomerInfo;
-            used++;
-
-            printf( "server: new CustomerInfo added to database\n");
-
             // Send received datagram back to the client
             if( sendto( sock, SUCCESS, sizeof(SUCCESS), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(SUCCESS) )
                 DieWithError( "server: sendto() sent a different number of bytes than expected" );
@@ -99,8 +126,6 @@ int main( int argc, char *argv[] )
         }
         else
         {
-            printf( "server: CustomerInfo already exists\n");
-
             // Send received datagram back to the client
             if( sendto( sock, FAILURE, sizeof(FAILURE), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(FAILURE) )
                 DieWithError( "server: sendto() sent a different number of bytes than expected" );
