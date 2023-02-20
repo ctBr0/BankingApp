@@ -23,7 +23,8 @@ struct CustomerInfo
 struct Cohort
 {
     char* founder_name;
-    int size;
+    int inCohort; // 0: true, 1: false
     struct CustomerInfo* customer_info_array;
+    int size;
 };
 

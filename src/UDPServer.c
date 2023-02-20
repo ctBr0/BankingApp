@@ -102,6 +102,22 @@ int main( int argc, char *argv[] )
             {
                 printf( "server: customer already exists\n");
             }
+
+            if (failed == false)
+            {
+                // Send received datagram back to the client
+                packet.status = 1;
+                if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
+                    DieWithError( "server: sendto() sent a different number of bytes than expected" );
+
+            }
+            else
+            {
+                // Send received datagram back to the client
+                packet.status = 0;
+                if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
+                    DieWithError( "server: sendto() sent a different number of bytes than expected" );
+            }
         }
         else if (strcmp(packet.command_choice,"new_cohort") == 0)
         {
@@ -135,12 +151,57 @@ int main( int argc, char *argv[] )
                     packet.cohort.customer_info_array[i] = CustomerInfoArray[randArray[index]];
                 }
 
+                packet.cohort.inCohort = 0; // true
+
                 printf( "server: new cohort created\n");
+
+                if (failed == false)
+                {
+                    // Send received datagram back to the client
+                    packet.status = 1;
+                    if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
+                        DieWithError( "server: sendto() sent a different number of bytes than expected" );
+
+                }
+                else
+                {
+                    // Send received datagram back to the client
+                    packet.status = 0;
+                    if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
+                        DieWithError( "server: sendto() sent a different number of bytes than expected" );
+                }
             }
         }
         else if (strcmp(packet.command_choice,"delete_cohort") == 0)
         {
-            printf("asdfadsf");
+            if (packet.cohort.inCohort == 1) // not in cohort
+            {
+                failed = true;
+                printf(" server: client is not in an existing cohort\n");
+            }
+            else
+            {
+                packet.cohort.inCohort = 0;
+                packet.cohort.customer_info_array = (struct CustomerInfo*)malloc(0);
+
+                printf( "server: cohort deleted successfully\n");
+
+                if (failed == false)
+                {
+                    // Send received datagram back to the client
+                    packet.status = 1;
+                    if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
+                        DieWithError( "server: sendto() sent a different number of bytes than expected" );
+
+                }
+                else
+                {
+                    // Send received datagram back to the client
+                    packet.status = 0;
+                    if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
+                        DieWithError( "server: sendto() sent a different number of bytes than expected" );
+                }
+            }
         }
         else if (strcmp(packet.command_choice,"exit") == 0)
         {
@@ -151,21 +212,6 @@ int main( int argc, char *argv[] )
             exit(1); // never gets here
         }
 
-        if (failed == false)
-        {
-            // Send received datagram back to the client
-            packet.status = 1;
-            if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
-                DieWithError( "server: sendto() sent a different number of bytes than expected" );
-
-        }
-        else
-        {
-            // Send received datagram back to the client
-            packet.status = 0;
-            if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
-                DieWithError( "server: sendto() sent a different number of bytes than expected" );
-        }
 
     }
     // NOT REACHED */

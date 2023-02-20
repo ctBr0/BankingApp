@@ -186,7 +186,7 @@ int main( int argc, char *argv[] )
                 scanf("%d", &cohort_size);
             }
 
-            struct Cohort cohort = { name, cohort_size, (struct CustomerInfo*)malloc(0) };
+            struct Cohort cohort = { name, 1, (struct CustomerInfo*)malloc(0), cohort_size};
 
             struct Packet packet =
             {
@@ -202,8 +202,74 @@ int main( int argc, char *argv[] )
                 DieWithError( "client: sendto() sent a different number of bytes than expected" );
             }
 
-        }
+            // Receive a response
 
+            fromSize = sizeof( fromAddr );
+
+            if( ( respStringLen = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, &fromSize ) ) > sizeof(struct Packet) )
+                DieWithError( "client: recvfrom() failed" );
+
+            if( servAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr )
+                DieWithError( "client: Error: received a packet from unknown source.\n" );
+            
+            if (packet.status == 1)
+            {
+                printf( "client: cohort created successfully\n" );
+            }
+            else
+            {
+                printf( "client: failed to create cohort\n");
+            }
+
+            break;
+        
+            case 3:
+
+            printf( "client: Enter your name\n");
+            scanf("%s", &name);
+
+            struct Cohort cohort = { name, 1, (struct CustomerInfo*)malloc(0), cohort_size};
+
+            struct Packet packet =
+            {
+                0,
+                "new_cohort",
+                (const struct CustomerInfo){ 0 },
+                cohort
+            };
+
+            // Send the struct to the server
+            if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &servAddr, sizeof( servAddr ) ) != sizeof(struct Packet) )
+            {
+                DieWithError( "client: sendto() sent a different number of bytes than expected" );
+            }
+
+            // Receive a response
+
+            fromSize = sizeof( fromAddr );
+
+            if( ( respStringLen = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, &fromSize ) ) > sizeof(struct Packet) )
+                DieWithError( "client: recvfrom() failed" );
+
+            if( servAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr )
+                DieWithError( "client: Error: received a packet from unknown source.\n" );
+            
+            if (packet.status == 1)
+            {
+                printf( "client: cohort deleted successfully\n" );
+            }
+            else
+            {
+                printf( "client: failed to delete cohort\n");
+            }
+
+            case 4:
+
+
+            case 5:
+            
+            exit( 1 );
+        }
     }
     
     close( sock );
