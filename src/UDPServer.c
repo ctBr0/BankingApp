@@ -95,7 +95,7 @@ int main( int argc, char *argv[] )
 
             if (failed == false)
             {
-                customer_database = (struct CustomerInfo*)realloc(customer_database, customer_database + sizeof(struct CustomerInfo));
+                customer_database = (struct CustomerInfo*)realloc(customer_database, sizeof(customer_database) + sizeof(struct CustomerInfo));
                 customer_database[num_of_customers] = packet.customer_info;
                 num_of_customers++;
 
@@ -125,16 +125,45 @@ int main( int argc, char *argv[] )
                 for (int i = 0; i < num_of_customers; i++)
                 {   
                     // customer already exists in a cohort
-                    if (strcmp(customer_database[i].name, packet.cohort.founder_name) == 0 && customer_database[i].in_cohort == true)
+                    if (strcmp(customer_database[i].name, packet.cohort.founder_name) == 0)
                     {
-                        failed = true;
+                        if (customer_database[i].in_cohort == true)
+                        {
+                            failed = true;
+                        }
+                        else
+                        {
+                            customer_database[i].in_cohort = true; // create a new cohort and add the client as founder
+                            packet.cohort.cohort_member_array[0] = customer_database[i]; 
+                        }
                         break;
                     }
                 }
             }
 
+            int random;
             if (failed == false)
             {
+                bool valid = false;
+                int random;
+
+                // add customers to cohort_member_array
+                for (int i = 0; i < packet.cohort.size - 1; i++) // excluding the founder
+                {
+                    // pick a random customer whose is not already in a cohort
+                    while (!valid)
+                    {
+                        random = rand() % num_of_customers;
+                        if (customer_database[random].in_cohort == false) // valid
+                        {
+                            customer_database[random].in_cohort = true;
+                            packet.cohort.cohort_member_array = (struct CustomerInfo*)realloc(packet.cohort.cohort_member_array, sizeof(packet.cohort.cohort_member_array) + sizeof(struct CustomerInfo));
+                            packet.cohort.cohort_member_array[i + 1] = customer_database[random];
+                            valid = true;
+                        }
+                    }
+                }
+
                 
             }
             /*
