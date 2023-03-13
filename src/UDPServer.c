@@ -1,6 +1,4 @@
 // Implements the server side of an echo client-server application program.
-// The client reads ITERATIONS strings from stdin, passes the string to the
-// this server, which simply sends the string back to the client.
 //
 // Compile on general.asu.edu as:
 //   g++ -o server UDPEchoServer.c
@@ -16,8 +14,6 @@
 #include <string.h>     // for memset()
 #include <unistd.h>     // for close()
 #include "../include/defns.h"
-
-#define ECHOMAX 255     // Longest string to echo
 
 void DieWithError( const char *errorMessage ) // External error handling function
 {
@@ -178,6 +174,11 @@ int main( int argc, char *argv[] )
                 // send received datagram to other cohort members
                 for (int i = 1; i < packet.cohort.size; i++) // each member in the cohort except the founder
                 {
+                    memset( &clientAddr, 0, sizeof( clientAddr ) ); // Zero out structure
+                    clientAddr.sin_family = AF_INET;                  // Internet address family
+                    clientAddr.sin_addr.s_addr = htonl( packet.cohort.cohort_member_array[i].client_ip_addr );
+                    clientAddr.sin_port = htons( packet.cohort.cohort_member_array[i].port_to_bank );      // Local port
+
                     if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
                         DieWithError( "server: sendto() sent a different number of bytes than expected" );
 
@@ -187,6 +188,10 @@ int main( int argc, char *argv[] )
             else
             {
                 // Send received datagram back to the client
+                packet.req_res = 1; // response
+                packet.succ_fail = 0; // success
+                if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
+                    DieWithError( "server: sendto() sent a different number of bytes than expected" );
 
             }
             /*

@@ -1,6 +1,4 @@
 // Implements the client side of an echo client-server application program.
-// The client reads ITERATIONS strings from stdin, passes the string to the
-// server, which simply echoes it back to the client.
 //
 // Compile on general.asu.edu as:
 //   g++ -o client UDPEchoClient.c
@@ -16,9 +14,6 @@
 #include <unistd.h>     // for close()
 #include "../include/defns.h"
 
-#define ECHOMAX 255     // Longest string to echo
-#define ITERATIONS	5   // Number of iterations the client executes
-
 void DieWithError( const char *errorMessage ) // External error handling function
 {
     perror( errorMessage );
@@ -30,15 +25,14 @@ int main( int argc, char *argv[] )
     size_t nread;
     int sock;                        // Socket descriptor
     struct sockaddr_in servAddr; // Server address
-    struct sockaddr_in fromAddr;     // Source address of echo
+    struct sockaddr_in fromAddr; 
     unsigned short servPort;     // Echo server port
-    unsigned int fromSize;           // In-out of address size for recvfrom()
     char *servIP;                    // IP address of server
-    int respStringLen;               // Length of received response
+    int recvMsgSize;                 // Size of received message
 
     char* name;
     double balance;
-    struct sockaddr_in client_ip_address;
+    char* client_ip_address;
     int port_to_bank;
     int port_to_other_CustomerInfos;
 
@@ -143,14 +137,12 @@ int main( int argc, char *argv[] )
 
     // Receive a response
 
-    fromSize = sizeof( fromAddr );
-
-    if( ( respStringLen = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, &fromSize ) ) > sizeof(struct Packet) )
+    if( ( recvMsgSize = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, sizeof( fromAddr ) ) ) > sizeof(struct Packet) )
         DieWithError( "client: recvfrom() failed" );
 
-    if( servAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr )
+    if( servAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr ) // from server
         DieWithError( "client: Error: received a packet from unknown source.\n" );
-    
+
     if (packet.succ_fail == 0) // success
     {
         printf( "client: account created successfully\n" );
@@ -167,20 +159,52 @@ int main( int argc, char *argv[] )
     while( done == false )
     {
         printf( "client: Choose an action\n" );
-        printf( "1. Create a cohort\n");
-        printf( "2. Delete a cohort\n");
-        printf( "3. Delete an account\n");
-        printf( "4. Make a deposit\n");
-        printf( "5. Make a withdrawal\n");
-        printf( "6. Transfer money\n");
-        printf(" 7. Listen for packets\n");
+        printf(" 1. Listen for packets\n");
+        printf( "2. Create a cohort\n");
+        printf( "3. Delete a cohort\n");
+        printf( "4. Delete an account\n");
+        printf( "5. Make a deposit\n");
+        printf( "6. Make a withdrawal\n");
+        printf( "7. Transfer money\n");
 
         scanf("%d", &userInput);
         switch(userInput)
         {
+            // Listen for packets
+            case 1:
+
+            printf( "client: Listening for packets\n");
+            if( ( recvMsgSize = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, sizeof(fromAddr) )) < 0 )
+            {
+                DieWithError( "server: recvfrom() failed" );
+            }
+
+            if ( servAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr ) // packet is from server
+            {
+                if (strcmp(packet.command_choice,"new_cohort") == 0)
+                {
+                    cohort = packet.cohort;
+                    printf( "client: joined a cohort\n");
+                }
+                
+                if (strcmp(packet.command_choice,"delete_cohort") == 0)
+                {
+
+                }
+            }
+            else if () // packet is from cohort members
+            {
+
+            }
+            else
+            {
+                DieWithError( "client: Error: received a packet from unknown source.\n" );
+            }
+
+            break;
 
             // Create a cohort
-            case 1:
+            case 2:
 
             printf( "client: Enter your name\n");
             scanf("%s", &name);
@@ -215,9 +239,7 @@ int main( int argc, char *argv[] )
 
             // Receive a response
 
-            fromSize = sizeof( fromAddr );
-
-            if( ( respStringLen = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, &fromSize ) ) > sizeof(struct Packet) )
+            if( ( recvMsgSize = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, sizeof(fromAddr) ) ) > sizeof(struct Packet) )
                 DieWithError( "client: recvfrom() failed" );
 
             if( servAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr )
@@ -235,7 +257,7 @@ int main( int argc, char *argv[] )
             break;
 
             // Delete a cohort
-            case 2:
+            case 3:
 
             printf( "client: Enter your name\n");
             scanf("%s", &name);
@@ -276,7 +298,7 @@ int main( int argc, char *argv[] )
             }
 
             // Delete an account
-            case 3:
+            case 4:
 
             printf( "client: Enter your name\n");
             scanf("%s", &name);
@@ -315,7 +337,7 @@ int main( int argc, char *argv[] )
             }
 
             // Make a deposit
-            case 4:
+            case 5:
             
             exit( 1 );
         }
