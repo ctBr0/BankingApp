@@ -33,11 +33,12 @@ int main( int argc, char *argv[] )
     unsigned int cliAddrLen;         // Length of incoming message
     unsigned short servPort;     // Server port
     int recvMsgSize;                 // Size of received message
-
+    
     struct Packet packet;
-    struct CustomerInfo* CustomerInfoArray;
-    int currentArraySize;
-    int used = 0;
+    struct CustomerInfo* customer_database;
+    struct Cohort* cohort_database;
+    int num_of_customers;
+    int num_of_cohorts;
     bool failed;
 
     if( argc != 2 )         // Test for correct number of parameters
@@ -64,7 +65,9 @@ int main( int argc, char *argv[] )
 
 	printf( "server: Port server is listening to is: %d\n", servPort );
 
-    CustomerInfoArray = (struct CustomerInfo*)malloc(0);
+    num_of_customers = 0;
+    num_of_cohorts = 0;
+    customer_database = (struct CustomerInfo*)malloc(num_of_customers * sizeof(struct CustomerInfo));
 
     for(;;) // Run forever
     {
@@ -80,9 +83,10 @@ int main( int argc, char *argv[] )
         // open an account
         if (strcmp(packet.command_choice,"open") == 0)
         {
-            for (int i = 0; i < used; i++)
-            {
-                if (CustomerInfoArray[i].name == packet.customer_info.name)
+            for (int i = 0; i < num_of_customers; i++)
+            {   
+                // customer already exists in the database
+                if (strcmp(customer_database[i].name, packet.customer_info.name) == 0)
                 {
                     failed = true;
                     break;
@@ -91,36 +95,49 @@ int main( int argc, char *argv[] )
 
             if (failed == false)
             {
-                CustomerInfoArray = (struct CustomerInfo*)realloc(CustomerInfoArray, currentArraySize + sizeof(struct CustomerInfo));
-                currentArraySize += sizeof(struct CustomerInfo);
-                CustomerInfoArray[used] = packet.customer_info;
-                used++;
+                customer_database = (struct CustomerInfo*)realloc(customer_database, customer_database + sizeof(struct CustomerInfo));
+                customer_database[num_of_customers] = packet.customer_info;
+                num_of_customers++;
 
                 printf( "server: new customer added to database\n");
+
+                // Send received datagram back to the client
+                packet.req_res = 1; // response
+                packet.succ_fail = 1; // success
+                if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
+                    DieWithError( "server: sendto() sent a different number of bytes than expected" );
             }
             else
             {
                 printf( "server: customer already exists\n");
-            }
 
-            if (failed == false)
-            {
                 // Send received datagram back to the client
-                packet.status = 1;
-                if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
-                    DieWithError( "server: sendto() sent a different number of bytes than expected" );
-
-            }
-            else
-            {
-                // Send received datagram back to the client
-                packet.status = 0;
+                packet.req_res = 1; // response
+                packet.succ_fail = 0; // failure
                 if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
                     DieWithError( "server: sendto() sent a different number of bytes than expected" );
             }
         }
         else if (strcmp(packet.command_choice,"new_cohort") == 0)
         {
+            if (num_of_cohorts != 0) // check if client is already in an existing cohort
+            {
+                for (int i = 0; i < num_of_customers; i++)
+                {   
+                    // customer already exists in a cohort
+                    if (strcmp(customer_database[i].name, packet.cohort.founder_name) == 0 && customer_database[i].in_cohort == true)
+                    {
+                        failed = true;
+                        break;
+                    }
+                }
+            }
+
+            if (failed == false)
+            {
+                
+            }
+            /*
             if (currentArraySize < packet.cohort.size)
             {
                 failed = true;
@@ -171,6 +188,7 @@ int main( int argc, char *argv[] )
                         DieWithError( "server: sendto() sent a different number of bytes than expected" );
                 }
             }
+            */
         }
         else if (strcmp(packet.command_choice,"delete_cohort") == 0)
         {
