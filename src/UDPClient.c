@@ -41,6 +41,7 @@ int main( int argc, char *argv[] )
     char* client_ip_address;
     int port_to_bank;
     int port_to_other_CustomerInfos;
+
     int cohort_size;
 
     if (argc < 3)
@@ -105,75 +106,77 @@ int main( int argc, char *argv[] )
     servAddr.sin_addr.s_addr = inet_addr( servIP ); // Set server's IP address
     servAddr.sin_port = htons( servPort );      // Set server's port
 
-	// Command selection
+    // Open an account
+    printf( "Open an account\n" );
 
     int userInput;
+    scanf("%d", &userInput);
+    
+    printf( "client: Enter your name\n");
+    scanf("%s", &name);
+    printf( "client: Enter your balance\n");
+    scanf("%d", &balance);
+    printf( "client: Enter your ip address\n");
+    scanf("%d", &client_ip_address);
+    printf( "client: Enter your port number to the bank\n");
+    scanf("%d", &port_to_bank);
+    printf( "client: Enter your port number to other CustomerInfos\n");
+    scanf("%d", &port_to_other_CustomerInfos);
+
+    struct Cohort cohort = { "", (struct CustomerInfo*)malloc(sizeof(struct CustomerInfo)), 0}; // null cohort struct
+    struct CustomerInfo customer_info = { name, balance, client_ip_address, port_to_bank, port_to_other_CustomerInfos, false};
+
+    struct Packet packet = 
+    {
+        0, // request
+        0, // status is not needed here
+        "open",
+        customer_info,
+        cohort // cohort is not needed here
+    };
+
+    // Send the struct to the server
+    if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &servAddr, sizeof( servAddr ) ) != sizeof(struct Packet) )
+    {
+        DieWithError( "client: sendto() sent a different number of bytes than expected" );
+    }
+
+    // Receive a response
+
+    fromSize = sizeof( fromAddr );
+
+    if( ( respStringLen = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, &fromSize ) ) > sizeof(struct Packet) )
+        DieWithError( "client: recvfrom() failed" );
+
+    if( servAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr )
+        DieWithError( "client: Error: received a packet from unknown source.\n" );
+    
+    if (packet.succ_fail == 0) // success
+    {
+        printf( "client: account created successfully\n" );
+    }
+    else // failure
+    {
+        DieWithError( "client: failed to create account\n");
+    }
+
+
+	// Command selection
+
     bool done = false;
     while( done == false )
     {
         printf( "client: Choose an action\n" );
-        printf( "1. Open an account\n" );
-        printf( "2. Create a cohort\n");
-        printf( "3. Delete a cohort\n");
-        printf( "4. Delete an account\n");
-        printf( "5. Quit the application\n");
+        printf( "1. Create a cohort\n");
+        printf( "2. Delete a cohort\n");
+        printf( "3. Delete an account\n");
 
         scanf("%d", &userInput);
         switch(userInput)
         {
-            // open an account
-            case 1:
-
-            printf( "client: Enter your name\n");
-            scanf("%s", &name);
-            printf( "client: Enter your balance\n");
-            scanf("%d", &balance);
-            printf( "client: Enter your ip address\n");
-            scanf("%d", &client_ip_address);
-            printf( "client: Enter your port number to the bank\n");
-            scanf("%d", &port_to_bank);
-            printf( "client: Enter your port number to other CustomerInfos\n");
-            scanf("%d", &port_to_other_CustomerInfos);
-
-            struct CustomerInfo customer_info = { name, balance, client_ip_address, port_to_bank, port_to_other_CustomerInfos };
-
-            struct Packet packet = 
-            {
-                0,
-                "open",
-                customer_info,
-                (const struct Cohort){ 0 }
-            };
-
-            // Send the struct to the server
-            if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &servAddr, sizeof( servAddr ) ) != sizeof(struct Packet) )
-            {
-                DieWithError( "client: sendto() sent a different number of bytes than expected" );
-            }
-
-            // Receive a response
-
-            fromSize = sizeof( fromAddr );
-
-            if( ( respStringLen = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, &fromSize ) ) > sizeof(struct Packet) )
-                DieWithError( "client: recvfrom() failed" );
-
-            if( servAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr )
-                DieWithError( "client: Error: received a packet from unknown source.\n" );
-            
-            if (packet.status == 1)
-            {
-                printf( "client: account created successfully\n" );
-            }
-            else
-            {
-                printf( "client: failed to create account\n");
-            }
-            
-            break;
 
             // Create a cohort
-            case 2:
+            case 1:
 
             printf( "client: Enter your name\n");
             scanf("%s", &name);
@@ -186,13 +189,17 @@ int main( int argc, char *argv[] )
                 scanf("%d", &cohort_size);
             }
 
-            struct Cohort cohort = { name, 1, (struct CustomerInfo*)malloc(0), cohort_size};
+            cohort.founder_name = name;
+            cohort.size = cohort_size;
+
+            struct CustomerInfo customer_info = { "", 0.0, "", 0, 0, false};
 
             struct Packet packet =
             {
                 0,
+                0,
                 "new_cohort",
-                (const struct CustomerInfo){ 0 },
+                customer_info,
                 cohort
             };
 
@@ -223,7 +230,7 @@ int main( int argc, char *argv[] )
 
             break;
         
-            case 3:
+            case 2:
 
             printf( "client: Enter your name\n");
             scanf("%s", &name);
@@ -263,7 +270,7 @@ int main( int argc, char *argv[] )
                 printf( "client: failed to delete cohort\n");
             }
 
-            case 4:
+            case 3:
 
             printf( "client: Enter your name\n");
             scanf("%s", &name);

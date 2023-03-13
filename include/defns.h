@@ -5,12 +5,13 @@
 
 struct Packet
 {
-    int status;
+    int req_res;
+    int succ_fail;
     char* command_choice;
     struct CustomerInfo customer_info;
     struct Cohort cohort;
-
 };
+
 struct CustomerInfo
 {
     char* name;
@@ -18,13 +19,12 @@ struct CustomerInfo
     char* client_ip_addr;
     int port_to_bank;
     int port_to_other_customers;
+    bool in_cohort;
 };
 
 struct Cohort
 {
     char* founder_name;
-    int inCohort; // 0: true, 1: false
-    struct CustomerInfo* customer_info_array;
+    struct CustomerInfo* cohort_member_array;
     int size;
 };
-
