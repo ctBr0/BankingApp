@@ -38,7 +38,7 @@ int main( int argc, char *argv[] )
 
     char* name;
     double balance;
-    char* client_ip_address;
+    struct sockaddr_in client_ip_address;
     int port_to_bank;
     int port_to_other_CustomerInfos;
 
@@ -168,9 +168,12 @@ int main( int argc, char *argv[] )
     {
         printf( "client: Choose an action\n" );
         printf( "1. Create a cohort\n");
-        printf( "2. Get cohort info\n");
         printf( "2. Delete a cohort\n");
         printf( "3. Delete an account\n");
+        printf( "4. Make a deposit\n");
+        printf( "5. Make a withdrawal\n");
+        printf( "6. Transfer money\n");
+        printf(" 7. Listen for packets\n");
 
         scanf("%d", &userInput);
         switch(userInput)
@@ -272,6 +275,7 @@ int main( int argc, char *argv[] )
                 printf( "client: failed to delete cohort\n");
             }
 
+            // Delete an account
             case 3:
 
             printf( "client: Enter your name\n");
@@ -310,7 +314,8 @@ int main( int argc, char *argv[] )
                 printf( "client: failed to delete customer information\n");
             }
 
-            case 5:
+            // Make a deposit
+            case 4:
             
             exit( 1 );
         }

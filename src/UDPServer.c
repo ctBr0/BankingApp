@@ -68,6 +68,7 @@ int main( int argc, char *argv[] )
     num_of_customers = 0;
     num_of_cohorts = 0;
     customer_database = (struct CustomerInfo*)malloc(num_of_customers * sizeof(struct CustomerInfo));
+    cohort_database = (struct Cohort*)malloc(num_of_cohorts * sizeof(struct Cohort));
 
     for(;;) // Run forever
     {
@@ -164,7 +165,29 @@ int main( int argc, char *argv[] )
                     }
                 }
 
-                
+                // add cohort_member_array to cohort_database
+                cohort_database[num_of_cohorts] = packet.cohort;
+                num_of_cohorts++;
+
+                // Send received datagram back to the client
+                packet.req_res = 1; // response
+                packet.succ_fail = 1; // success
+                if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
+                    DieWithError( "server: sendto() sent a different number of bytes than expected" );
+
+                // send received datagram to other cohort members
+                for (int i = 1; i < packet.cohort.size; i++) // each member in the cohort except the founder
+                {
+                    if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
+                        DieWithError( "server: sendto() sent a different number of bytes than expected" );
+
+                }
+
+            }
+            else
+            {
+                // Send received datagram back to the client
+
             }
             /*
             if (currentArraySize < packet.cohort.size)
