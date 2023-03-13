@@ -168,6 +168,7 @@ int main( int argc, char *argv[] )
     {
         printf( "client: Choose an action\n" );
         printf( "1. Create a cohort\n");
+        printf( "2. Get cohort info\n");
         printf( "2. Delete a cohort\n");
         printf( "3. Delete an account\n");
 
@@ -219,7 +220,7 @@ int main( int argc, char *argv[] )
             if( servAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr )
                 DieWithError( "client: Error: received a packet from unknown source.\n" );
             
-            if (packet.status == 1)
+            if (packet.succ_fail == 0)
             {
                 printf( "client: cohort created successfully\n" );
             }
@@ -229,7 +230,8 @@ int main( int argc, char *argv[] )
             }
 
             break;
-        
+
+            // Delete a cohort
             case 2:
 
             printf( "client: Enter your name\n");
