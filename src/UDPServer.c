@@ -100,7 +100,7 @@ int main( int argc, char *argv[] )
 
                 // Send received datagram back to the client
                 packet.req_res = 1; // response
-                packet.succ_fail = 1; // success
+                packet.succ_fail = 0; // success
                 if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
                     DieWithError( "server: sendto() sent a different number of bytes than expected" );
             }
@@ -110,7 +110,7 @@ int main( int argc, char *argv[] )
 
                 // Send received datagram back to the client
                 packet.req_res = 1; // response
-                packet.succ_fail = 0; // failure
+                packet.succ_fail = 1; // failure
                 if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
                     DieWithError( "server: sendto() sent a different number of bytes than expected" );
             }
@@ -167,7 +167,7 @@ int main( int argc, char *argv[] )
 
                 // Send received datagram back to the client
                 packet.req_res = 1; // response
-                packet.succ_fail = 1; // success
+                packet.succ_fail = 0; // success
                 if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
                     DieWithError( "server: sendto() sent a different number of bytes than expected" );
 
@@ -189,7 +189,7 @@ int main( int argc, char *argv[] )
             {
                 // Send received datagram back to the client
                 packet.req_res = 1; // response
-                packet.succ_fail = 0; // success
+                packet.succ_fail = 1; // failure
                 if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
                     DieWithError( "server: sendto() sent a different number of bytes than expected" );
 
@@ -249,52 +249,151 @@ int main( int argc, char *argv[] )
         }
         else if (strcmp(packet.command_choice,"delete_cohort") == 0)
         {
-            if (packet.cohort.inCohort == 1) // not in cohort
+            if (packet.customer_info.in_cohort == false) // not in cohort
             {
                 failed = true;
                 printf(" server: client is not in an existing cohort\n");
             }
             else
             {
-                packet.cohort.inCohort = 0;
-                packet.cohort.customer_info_array = (struct CustomerInfo*)malloc(0);
-
                 printf( "server: cohort deleted successfully\n");
+            }
 
-                if (failed == false)
+            if (failed == false) // success
+            {
+                // Send datagram to other cohort members
+                for (int i = 1; i < packet.cohort.size; i++) // each member in the cohort except the founder
                 {
-                    // Send received datagram back to the client
-                    packet.status = 1;
+                    memset( &clientAddr, 0, sizeof( clientAddr ) ); // Zero out structure
+                    clientAddr.sin_family = AF_INET;                  // Internet address family
+                    clientAddr.sin_addr.s_addr = htonl( packet.cohort.cohort_member_array[i].client_ip_addr );
+                    clientAddr.sin_port = htons( packet.cohort.cohort_member_array[i].port_to_bank );      // Local port
+
                     if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
                         DieWithError( "server: sendto() sent a different number of bytes than expected" );
 
                 }
-                else
+
+                // Modify values in customer database
+                int count = 0;
+                for (int i = 0; i < num_of_customers; i++)
                 {
-                    // Send received datagram back to the client
-                    packet.status = 0;
-                    if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
-                        DieWithError( "server: sendto() sent a different number of bytes than expected" );
+                    for (int j = 0; j < packet.cohort.size; j++)
+                    {
+                        if (strcmp(customer_database[i].name, packet.cohort.cohort_member_array[j].name) == 0)
+                        {
+                            customer_database[i].in_cohort = false;
+                            j = packet.cohort.size;
+                            count++;
+                        }
+                    }
+
+                    if (count == packet.cohort.size)
+                    {
+                        i = num_of_customers;
+                    }
                 }
+
+                // Delete cohort from database
+                for (int i = 0; i < num_of_cohorts; i++)
+                {
+                    if (strcmp(cohort_database[i].founder_name, packet.cohort.founder_name) == 0)
+                    {
+                        cohort_database[i] = cohort_database[num_of_cohorts - 1];
+                        num_of_cohorts--;
+                        cohort_database = (struct Cohort*)realloc(cohort_database, num_of_cohorts * sizeof(struct Cohort));
+
+                        i = num_of_cohorts;
+                    }
+                }
+
+                // Send received datagram back to the client
+
+                packet.customer_info.in_cohort = false;
+                packet.cohort.cohort_member_array = (struct CustomerInfo*)malloc(sizeof(struct CustomerInfo));
+                packet.cohort.founder_name = "";
+                packet.cohort.size = 0;
+
+                packet.req_res = 1;
+                packet.succ_fail = 0;
+                if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
+                    DieWithError( "server: sendto() sent a different number of bytes than expected" );
+
+            }
+            else
+            {
+                // Send received datagram back to the client
+                packet.req_res = 1;
+                packet.succ_fail = 1;
+                if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
+                    DieWithError( "server: sendto() sent a different number of bytes than expected" );
             }
         }
         else if (strcmp(packet.command_choice,"exit") == 0)
         {
-            for (int i = 0; i < currentArraySize; i++)
+            if (packet.customer_info.in_cohort == true)
             {
-                if (strcmp(packet.customer_info.name, CustomerInfoArray[i].name) == 0)
+                failed = true;
+                printf(" server: client is in an existing cohort\n");
+            }
+            else
+            {
+                // Delete customer from database
+                for (int i = 0; i < num_of_customers; i++)
                 {
-                    packet.status = 1;
-                    if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
-                        DieWithError( "server: sendto() sent a different number of bytes than expected" );
+                    if (strcmp(customer_database[i].name, packet.customer_info.name) == 0)
+                    {
+                        customer_database[i] = customer_database[num_of_customers - 1];
+                        num_of_customers--;
+                        customer_database = (struct CustomerInfo*)realloc(customer_database, num_of_customers * sizeof(struct CustomerInfo));
+
+                        i = num_of_customers;
+                    }
+                }
+                printf(" server: customer deleted successfully\n");
+            }
+
+            if (failed == false)
+            {
+                // Send received datagram back to the client
+                packet.req_res = 1; // response
+                packet.succ_fail = 0; // success
+                if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
+                    DieWithError( "server: sendto() sent a different number of bytes than expected" );
+            }
+            else
+            {
+                // Send received datagram back to the client
+                packet.req_res = 1; // response
+                packet.succ_fail = 1; // fail
+                if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
+                    DieWithError( "server: sendto() sent a different number of bytes than expected" );
+
+            }
+        }
+        else if (strcmp(packet.command_choice,"deposit") == 0 || strcmp(packet.command_choice,"withdrawal") == 0)
+        {
+            // Modify customer info in database
+            for (int i = 0; i < num_of_customers; i++)
+            {
+                if (strcmp(customer_database[i].name, packet.customer_info.name) == 0)
+                {
+                    customer_database[i].balance = packet.customer_info.balance;
+
+                    i = num_of_customers;
                 }
             }
+            printf(" server: customer info modified successfully\n");
+
+            packet.req_res = 1; // response
+            packet.succ_fail = 0; // success
+            if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
+                DieWithError( "server: sendto() sent a different number of bytes than expected" );
         }
         else
         {
             exit(1); // never gets here
         }
-
 
     }
     // NOT REACHED */

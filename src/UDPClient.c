@@ -179,7 +179,7 @@ int main( int argc, char *argv[] )
                 DieWithError( "server: recvfrom() failed" );
             }
 
-            if ( servAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr ) // packet is from server
+            if ( servAddr.sin_addr.s_addr == fromAddr.sin_addr.s_addr ) // packet is from server
             {
                 if (strcmp(packet.command_choice,"new_cohort") == 0)
                 {
@@ -189,13 +189,19 @@ int main( int argc, char *argv[] )
                 
                 if (strcmp(packet.command_choice,"delete_cohort") == 0)
                 {
-
+                    customer_info.in_cohort = false;
+                    cohort.cohort_member_array = (struct CustomerInfo*)malloc(sizeof(struct CustomerInfo));
+                    cohort.founder_name = "";
+                    cohort.size = 0;
+                    printf( "client: cohort disbanded\n");
                 }
             }
+            /*
             else if () // packet is from cohort members
             {
 
             }
+            */
             else
             {
                 DieWithError( "client: Error: received a packet from unknown source.\n" );
@@ -220,8 +226,6 @@ int main( int argc, char *argv[] )
             cohort.founder_name = name;
             cohort.size = cohort_size;
 
-            struct CustomerInfo customer_info = { "", 0.0, "", 0, 0, false};
-
             struct Packet packet =
             {
                 0,
@@ -242,7 +246,7 @@ int main( int argc, char *argv[] )
             if( ( recvMsgSize = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, sizeof(fromAddr) ) ) > sizeof(struct Packet) )
                 DieWithError( "client: recvfrom() failed" );
 
-            if( servAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr )
+            if( servAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr ) // not from server
                 DieWithError( "client: Error: received a packet from unknown source.\n" );
             
             if (packet.succ_fail == 0)
@@ -262,13 +266,12 @@ int main( int argc, char *argv[] )
             printf( "client: Enter your name\n");
             scanf("%s", &name);
 
-            struct Cohort cohort = { name, 1, (struct CustomerInfo*)malloc(0), cohort_size};
-
             struct Packet packet =
             {
                 0,
-                "new_cohort",
-                (const struct CustomerInfo){ 0 },
+                0,
+                "delete_cohort",
+                customer_info,
                 cohort
             };
 
@@ -280,15 +283,13 @@ int main( int argc, char *argv[] )
 
             // Receive a response
 
-            fromSize = sizeof( fromAddr );
-
-            if( ( respStringLen = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, &fromSize ) ) > sizeof(struct Packet) )
+            if( ( recvMsgSize = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, sizeof(fromAddr) ) ) > sizeof(struct Packet) )
                 DieWithError( "client: recvfrom() failed" );
 
-            if( servAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr )
+            if( servAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr ) // not from server
                 DieWithError( "client: Error: received a packet from unknown source.\n" );
             
-            if (packet.status == 1)
+            if (packet.succ_fail == 0)
             {
                 printf( "client: cohort deleted successfully\n" );
             }
@@ -306,9 +307,10 @@ int main( int argc, char *argv[] )
             struct Packet packet =
             {
                 0,
-                "new_cohort",
-                (const struct CustomerInfo){ 0 },
-                (const struct Cohort){ 0 }
+                0,
+                "exit",
+                customer_info,
+                cohort
             };
 
             // Send the struct to the server
@@ -319,27 +321,116 @@ int main( int argc, char *argv[] )
 
             // Receive a response
 
-            fromSize = sizeof( fromAddr );
-
-            if( ( respStringLen = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, &fromSize ) ) > sizeof(struct Packet) )
+            if( ( recvMsgSize = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, sizeof(fromAddr) ) ) > sizeof(struct Packet) )
                 DieWithError( "client: recvfrom() failed" );
 
             if( servAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr )
                 DieWithError( "client: Error: received a packet from unknown source.\n" );
             
-            if (packet.status == 1)
+            if (packet.succ_fail == 0)
             {
                 printf( "client: customer information deleted successfully\n" );
+                done = true; // terminates the process
             }
             else
             {
                 printf( "client: failed to delete customer information\n");
             }
 
+            break;
+
             // Make a deposit
             case 5:
+
+            printf( "Enter amount to deposit\n" );
+            scanf("%d", &userInput);
             
-            exit( 1 );
+            customer_info.balance = customer_info.balance + userInput;
+
+            // update bank database
+
+            struct Packet packet = 
+            {
+                0, // request
+                0, // status is not needed here
+                "deposit",
+                customer_info,
+                cohort // cohort is not needed here
+            };
+
+            // Send the struct to the server
+            if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &servAddr, sizeof( servAddr ) ) != sizeof(struct Packet) )
+            {
+                DieWithError( "client: sendto() sent a different number of bytes than expected" );
+            }
+
+            // Receive a response
+
+            if( ( recvMsgSize = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, sizeof( fromAddr ) ) ) > sizeof(struct Packet) )
+                DieWithError( "client: recvfrom() failed" );
+
+            if( servAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr ) // from server
+                DieWithError( "client: Error: received a packet from unknown source.\n" );
+
+            if (packet.succ_fail == 0) // success
+            {
+                printf( " client: Successful deposit\n");
+            }
+            else // failure
+            {
+                DieWithError( "client: deposit failed\n");
+            }
+
+            break;
+
+            case 6:
+
+            printf( "Enter amount to withdraw\n" );
+            scanf("%d", &userInput);
+            
+            customer_info.balance = customer_info.balance - userInput;
+            printf( " client: Successful withdrawal\n");
+
+            // update bank database
+
+            struct Packet packet = 
+            {
+                0, // request
+                0, // status is not needed here
+                "deposit",
+                customer_info,
+                cohort // cohort is not needed here
+            };
+
+            // Send the struct to the server
+            if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &servAddr, sizeof( servAddr ) ) != sizeof(struct Packet) )
+            {
+                DieWithError( "client: sendto() sent a different number of bytes than expected" );
+            }
+
+            // Receive a response
+
+            if( ( recvMsgSize = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, sizeof( fromAddr ) ) ) > sizeof(struct Packet) )
+                DieWithError( "client: recvfrom() failed" );
+
+            if( servAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr ) // from server
+                DieWithError( "client: Error: received a packet from unknown source.\n" );
+
+            if (packet.succ_fail == 0) // success
+            {
+                printf( " client: Successful withdrawal\n");
+            }
+            else // failure
+            {
+                DieWithError( "client: withdrawal failed\n");
+            }
+
+            break;
+
+            case 7:
+
+            break;
+
         }
     }
     
