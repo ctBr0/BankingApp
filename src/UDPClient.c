@@ -390,6 +390,7 @@ int main( int argc, char *argv[] )
 
             break;
 
+            // Make a withdrawal
             case 6:
 
             if (customer_info.in_cohort == false)
