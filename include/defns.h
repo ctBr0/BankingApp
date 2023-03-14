@@ -3,15 +3,6 @@
 #define SUCCESS 1
 #define FAILURE 0
 
-struct Packet
-{
-    int req_res;
-    int succ_fail;
-    char* command_choice;
-    struct CustomerInfo customer_info;
-    struct Cohort cohort;
-};
-
 struct CustomerInfo
 {
     char* name;
@@ -27,4 +18,13 @@ struct Cohort
     char* founder_name;
     struct CustomerInfo* cohort_member_array;
     int size;
+};
+
+struct Packet
+{
+    int req_res;
+    int succ_fail;
+    char* command_choice;
+    struct CustomerInfo customer_info;
+    struct Cohort cohort;
 };
