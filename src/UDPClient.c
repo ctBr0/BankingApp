@@ -39,7 +39,7 @@ int main( int argc, char *argv[] )
     int cohort_size;
 
     int transfer_amount;
-    char* to_member;
+    char* receiver;
 
     if (argc < 3)
     {
@@ -473,14 +473,14 @@ int main( int argc, char *argv[] )
                     scanf("%d", &transfer_amount);
                 }
                 printf( "client: enter the person you want to send the above amount to\n");
-                scanf("%s", &to_member);
-                while (!IsMember(to_member, cohort.cohort_member_array, cohort.size))
+                scanf("%s", &receiver);
+                while (!IsMember(receiver, cohort.cohort_member_array, cohort.size))
                 {
                     printf( "client: member does not exist\n");
                     printf( "client: enter the person you want to send the above amount to\n");
-                    scanf("%s", &to_member);
+                    scanf("%s", &receiver);
                 }
-                
+
             
 
 

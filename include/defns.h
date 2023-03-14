@@ -29,10 +29,32 @@ struct Packet
     struct Cohort cohort;
 };
 
-struct TransferPacket
+struct Transfer
 {
-    int amount;
-    char* to_member;
+    int transfer_amount;
+    char* sender;
+    char* receiver;
+    int label;
+};
+
+struct Checkpoint
+{
+    int action; // 0: Take a tentative checkpoint, 1: Make tentative checkpoint permanent, 2: Undo tentative checkpoint
+    int label;
+};
+
+struct Rollback
+{
+    int action; // 0: Prepare to rollback, 1: Rollback, 2: Do not rollback
+    int label;
+}
+
+struct P2PPacket
+{
+    int choice; // 0: Transfer, 1: Checkpoint, 2: Rollback
+    struct Tranfer transfer_info;
+    struct Checkpoint checkpoint_info;
+    struct Rollback rollback_info;
 };
 
 bool IsMember(char*, struct CustomerInfo*, int);
