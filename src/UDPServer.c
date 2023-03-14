@@ -117,6 +117,7 @@ int main( int argc, char *argv[] )
         }
         else if (strcmp(packet.command_choice,"new_cohort") == 0)
         {
+            // if (packet.cohort.size > num_of_customers)
             if (num_of_cohorts != 0) // check if client is already in an existing cohort
             {
                 for (int i = 0; i < num_of_customers; i++)
@@ -130,8 +131,8 @@ int main( int argc, char *argv[] )
                         }
                         else
                         {
-                            customer_database[i].in_cohort = true; // create a new cohort and add the client as founder
-                            packet.cohort.cohort_member_array[0] = customer_database[i]; 
+                            customer_database[i].in_cohort = true; // updated customer in_cohort value
+                            packet.cohort.cohort_member_array[0] = customer_database[i]; // updated the founder in the packet.cohort
                         }
                         break;
                     }
@@ -153,9 +154,9 @@ int main( int argc, char *argv[] )
                         random = rand() % num_of_customers;
                         if (customer_database[random].in_cohort == false) // valid
                         {
-                            customer_database[random].in_cohort = true;
+                            customer_database[random].in_cohort = true; // updating the database
                             packet.cohort.cohort_member_array = (struct CustomerInfo*)realloc(packet.cohort.cohort_member_array, sizeof(packet.cohort.cohort_member_array) + sizeof(struct CustomerInfo));
-                            packet.cohort.cohort_member_array[i + 1] = customer_database[random];
+                            packet.cohort.cohort_member_array[i + 1] = customer_database[random]; // add new cohort member to the packet.cohort
                             valid = true;
                         }
                     }

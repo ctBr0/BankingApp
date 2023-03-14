@@ -163,7 +163,7 @@ int main( int argc, char *argv[] )
         printf( "4. Delete an account\n");
         printf( "5. Make a deposit\n");
         printf( "6. Make a withdrawal\n");
-        printf( "7. Transfer money\n");
+        printf( "7. Transfer money\n"); // includes checkpoint?
         printf( "8. Simulate lost transfer\n");
         printf( "9. Rollback\n");
 
