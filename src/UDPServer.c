@@ -49,7 +49,7 @@ int main( int argc, char *argv[] )
     if( ( sock = socket( PF_INET, SOCK_DGRAM, IPPROTO_UDP ) ) < 0 )
         DieWithError( "server: socket() failed" );
 
-    // Construct local address structure */
+    // Construct local address structure
     memset( &servAddr, 0, sizeof( servAddr ) ); // Zero out structure
     servAddr.sin_family = AF_INET;                  // Internet address family
     servAddr.sin_addr.s_addr = htonl( INADDR_ANY ); // Any incoming interface
