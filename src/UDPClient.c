@@ -101,10 +101,7 @@ int main( int argc, char *argv[] )
     servAddr.sin_port = htons( servPort );      // Set server's port
 
     // Open an account
-    printf( "Open an account\n" );
-
-    int userInput;
-    scanf("%d", &userInput);
+    printf( " client: Create an account\n" );
     
     printf( "client: Enter your name\n");
     scanf("%s", &name);
@@ -155,6 +152,7 @@ int main( int argc, char *argv[] )
 
 	// Command selection
 
+    int userInput;
     bool done = false;
     while( done == false )
     {
@@ -442,6 +440,7 @@ int main( int argc, char *argv[] )
 
             break;
             
+            // Transfer money
             case 7:
 
             if (customer_info.in_cohort == false)
