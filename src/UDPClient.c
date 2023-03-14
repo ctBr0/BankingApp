@@ -119,8 +119,8 @@ int main( int argc, char *argv[] )
 
     struct Packet packet = 
     {
-        0, // request
-        0, // status is not needed here
+        htons(0), // request
+        htons(0), // status is not needed here
         "open",
         customer_info,
         cohort // cohort is not needed here
