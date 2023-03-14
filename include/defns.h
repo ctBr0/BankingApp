@@ -16,15 +16,15 @@ struct CustomerInfo
 struct Cohort
 {
     char* founder_name;
-    struct CustomerInfo* cohort_member_array;
+    struct CustomerInfo* cohort_member_array; // includes the founder
     int size;
 };
 
 struct Packet
 {
-    int req_res;
-    int succ_fail;
-    char* command_choice;
+    int req_res; // request = 0, response = 1
+    int succ_fail; // success = 0, failure = 1
+    char* command_choice; // eg. "open", "new_cohort"
     struct CustomerInfo customer_info;
     struct Cohort cohort;
 };
