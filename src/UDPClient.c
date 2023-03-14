@@ -164,6 +164,8 @@ int main( int argc, char *argv[] )
         printf( "5. Make a deposit\n");
         printf( "6. Make a withdrawal\n");
         printf( "7. Transfer money\n");
+        printf( "8. Simulate lost transfer\n");
+        printf( "9. Rollback\n");
 
         scanf("%d", &userInput);
         switch(userInput)
@@ -442,6 +444,50 @@ int main( int argc, char *argv[] )
             
             // Transfer money
             case 7:
+
+            if (customer_info.in_cohort == false)
+            {
+                printf( " client: customer is not in a cohort\n");
+            }
+            else
+            {
+
+
+
+            
+
+
+
+
+
+            }
+
+            break;
+
+            // Simulate lost transfer
+            case 8:
+
+            if (customer_info.in_cohort == false)
+            {
+                printf( " client: customer is not in a cohort\n");
+            }
+            else
+            {
+
+
+
+            
+
+
+
+
+
+            }
+
+            break;
+
+            // Rollback
+            case 9:
 
             if (customer_info.in_cohort == false)
             {

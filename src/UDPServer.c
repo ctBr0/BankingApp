@@ -392,7 +392,7 @@ int main( int argc, char *argv[] )
         }
         else
         {
-            exit(1); // never gets here
+            DieWithError(" server: shouldn't be here"); // never gets here
         }
 
     }
