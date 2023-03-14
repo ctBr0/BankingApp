@@ -108,7 +108,7 @@ int main( int argc, char *argv[] )
     printf( "client: Enter your balance\n");
     scanf("%d", &balance);
     printf( "client: Enter your ip address\n");
-    scanf("%d", &client_ip_address);
+    scanf("%s", &client_ip_address);
     printf( "client: Enter your port number to the bank\n");
     scanf("%d", &port_to_bank);
     printf( "client: Enter your port number to other customers\n");
@@ -455,7 +455,7 @@ int main( int argc, char *argv[] )
             
 
 
-            
+
 
 
             }
