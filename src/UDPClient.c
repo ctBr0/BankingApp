@@ -226,7 +226,7 @@ int main( int argc, char *argv[] )
             cohort.founder_name = name;
             cohort.size = cohort_size;
 
-            struct Packet packet =
+            packet = (struct Packet)
             {
                 0,
                 0,
@@ -266,7 +266,7 @@ int main( int argc, char *argv[] )
             printf( "client: Enter your name\n");
             scanf("%s", &name);
 
-            struct Packet packet =
+            packet = (struct Packet)
             {
                 0,
                 0,
@@ -304,7 +304,7 @@ int main( int argc, char *argv[] )
             printf( "client: Enter your name\n");
             scanf("%s", &name);
 
-            struct Packet packet =
+            packet = (struct Packet)
             {
                 0,
                 0,
@@ -355,7 +355,7 @@ int main( int argc, char *argv[] )
 
                 // update bank database
 
-                struct Packet packet = 
+                packet = (struct Packet)
                 {
                     0, // request
                     0, // status is not needed here
@@ -406,7 +406,7 @@ int main( int argc, char *argv[] )
 
                 // update bank database
 
-                struct Packet packet = 
+                packet = (struct Packet)
                 {
                     0, // request
                     0, // status is not needed here
