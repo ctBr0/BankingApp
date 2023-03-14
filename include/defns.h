@@ -28,3 +28,8 @@ struct Packet
     struct CustomerInfo customer_info;
     struct Cohort cohort;
 };
+
+struct TransferPacket
+{
+
+};

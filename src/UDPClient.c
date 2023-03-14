@@ -48,47 +48,6 @@ int main( int argc, char *argv[] )
     servPort = atoi( argv[2] );
 
     printf( "client: Arguments passed: server IP %s, port %d\n", servIP, servPort );
-
-    /*
-    if (argv[0] == "open")    // Test for correct number of arguments
-    {
-        if (argc == 8)
-        {
-            struct CustomerInfo CustomerInfo = { argv[1], atof(argv[2]), argv[3], atoi(argv[4]), atoi(argv[5]) };
-
-            servIP = argv[6];
-            servPort = stoi(argv[7]);
-
-            printf( "client: Arguments passed: name %s, balance %d, client ip address %s, port to bank %d, port to other CustomerInfos %d, server ip address %s, server port %d\n", argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7]);
-        }
-        else
-        {
-            fprintf( stderr, "Usage: %s <CustomerInfo-name> <balance> <client-ip-address> <port-to-bank> <port-to-other-CustomerInfos> <server-ip-address> <server-port>\n", argv[0] );
-            exit( 1 );
-        }
-    }
-    else if (argv[0] == "new-cohort")
-    {
-        if (argc == 5)
-        {
-
-        }
-    }
-    else if (argv[0] == "delete-cohort")
-    {
-
-    }
-    else if (argv[0] == "exit")
-    {
-
-    }
-    else
-    {
-        printf( "invalid command ");
-        exit(1);
-    }
-
-    */
     
     // Create a datagram/UDP socket
     if( ( sock = socket( PF_INET, SOCK_DGRAM, IPPROTO_UDP ) ) < 0 )
@@ -157,23 +116,25 @@ int main( int argc, char *argv[] )
     while( done == false )
     {
         printf( "client: Choose an action\n" );
-        printf(" 1. Listen for packets\n");
-        printf( "2. Create a cohort\n");
-        printf( "3. Delete a cohort\n");
-        printf( "4. Delete an account\n");
-        printf( "5. Make a deposit\n");
-        printf( "6. Make a withdrawal\n");
-        printf( "7. Transfer money\n"); // includes checkpoint?
-        printf( "8. Simulate lost transfer\n");
-        printf( "9. Rollback\n");
+        printf(" 1. Listen for packets from server\n");
+        printf(" 2. Listen for packets from cohort members\n");
+        printf( "3. Create a cohort\n");
+        printf( "4. Delete a cohort\n");
+        printf( "5. Delete an account\n");
+        printf( "6. Make a deposit\n");
+        printf( "7. Make a withdrawal\n");
+        printf( "8. Transfer money\n");
+        printf( "9. Simulate lost transfer\n");
+        printf( "10. Make a checkpoint\n");
+        printf( "11. Rollback\n");
 
         scanf("%d", &userInput);
         switch(userInput)
         {
-            // Listen for packets
+            // Listen for packets from server
             case 1:
 
-            printf( "client: Listening for packets\n");
+            printf( "client: Listening for packets from server\n");
             if( ( recvMsgSize = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, sizeof(fromAddr) )) < 0 )
             {
                 DieWithError( "server: recvfrom() failed" );
@@ -196,12 +157,54 @@ int main( int argc, char *argv[] )
                     printf( "client: cohort disbanded\n");
                 }
             }
-            /*
-            else if () // packet is from cohort members
+            else
             {
-
+                DieWithError( "client: Error: received a packet from unknown source.\n" );
             }
-            */
+
+            break;
+            
+            // Listen for packets from cohort members
+            case 2:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            
+            printf( "client: Listening for packets from cohort members\n");
+            if( ( recvMsgSize = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, sizeof(fromAddr) )) < 0 )
+            {
+                DieWithError( "server: recvfrom() failed" );
+            }
+
+            if ( servAddr.sin_addr.s_addr == fromAddr.sin_addr.s_addr ) // packet is from server
+            {
+                if (strcmp(packet.command_choice,"new_cohort") == 0)
+                {
+                    cohort = packet.cohort;
+                    printf( "client: joined a cohort\n");
+                }
+                
+                if (strcmp(packet.command_choice,"delete_cohort") == 0)
+                {
+                    customer_info.in_cohort = false;
+                    cohort.cohort_member_array = (struct CustomerInfo*)malloc(sizeof(struct CustomerInfo));
+                    cohort.founder_name = "";
+                    cohort.size = 0;
+                    printf( "client: cohort disbanded\n");
+                }
+            }
             else
             {
                 DieWithError( "client: Error: received a packet from unknown source.\n" );
@@ -210,7 +213,7 @@ int main( int argc, char *argv[] )
             break;
 
             // Create a cohort
-            case 2:
+            case 3:
 
             printf( "client: Enter your name\n");
             scanf("%s", &name);
@@ -261,7 +264,7 @@ int main( int argc, char *argv[] )
             break;
 
             // Delete a cohort
-            case 3:
+            case 4:
 
             printf( "client: Enter your name\n");
             scanf("%s", &name);
@@ -299,7 +302,7 @@ int main( int argc, char *argv[] )
             }
 
             // Delete an account
-            case 4:
+            case 5:
 
             printf( "client: Enter your name\n");
             scanf("%s", &name);
@@ -340,7 +343,7 @@ int main( int argc, char *argv[] )
             break;
 
             // Make a deposit
-            case 5:
+            case 6:
 
             if (customer_info.in_cohort == false)
             {
@@ -391,7 +394,7 @@ int main( int argc, char *argv[] )
             break;
 
             // Make a withdrawal
-            case 6:
+            case 7:
 
             if (customer_info.in_cohort == false)
             {
@@ -443,7 +446,29 @@ int main( int argc, char *argv[] )
             break;
             
             // Transfer money
-            case 7:
+            case 8:
+
+            if (customer_info.in_cohort == false)
+            {
+                printf( " client: customer is not in a cohort\n");
+            }
+            else
+            {
+
+                
+                
+            
+
+
+
+
+
+            }
+
+            break;
+
+            // Simulate lost transfer
+            case 9:
 
             if (customer_info.in_cohort == false)
             {
@@ -464,8 +489,8 @@ int main( int argc, char *argv[] )
 
             break;
 
-            // Simulate lost transfer
-            case 8:
+            // Make a checkpoint
+            case 10:
 
             if (customer_info.in_cohort == false)
             {
@@ -487,7 +512,7 @@ int main( int argc, char *argv[] )
             break;
 
             // Rollback
-            case 9:
+            case 11:
 
             if (customer_info.in_cohort == false)
             {
