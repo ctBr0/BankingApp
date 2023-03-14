@@ -77,6 +77,8 @@ int main( int argc, char *argv[] )
             DieWithError( "server: recvfrom() failed" );
         }
 
+        // print packet.command_choice
+
         // open an account
         if (strcmp(packet.command_choice,"open") == 0)
         {
