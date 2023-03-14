@@ -6,7 +6,7 @@
 struct CustomerInfo
 {
     char* name;
-    double balance;
+    int balance;
     char* client_ip_addr;
     unsigned short port_to_bank;
     unsigned short port_to_other_customers;
@@ -31,5 +31,5 @@ struct Packet
 
 struct TransferPacket
 {
-
+    double amount;
 };
