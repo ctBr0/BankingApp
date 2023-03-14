@@ -31,5 +31,8 @@ struct Packet
 
 struct TransferPacket
 {
-    double amount;
+    int amount;
+    char* to_member;
 };
+
+bool IsMember(char*, struct CustomerInfo*, int);

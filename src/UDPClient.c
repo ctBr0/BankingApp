@@ -38,6 +38,9 @@ int main( int argc, char *argv[] )
 
     int cohort_size;
 
+    int transfer_amount;
+    char* to_member;
+
     if (argc < 3)
     {
         fprintf( stderr, "Usage: %s <Server ip address> <Server port>\n", argv[0] );
@@ -181,7 +184,7 @@ int main( int argc, char *argv[] )
 
 
 
-            
+
             printf( "client: Listening for packets from cohort members\n");
             if( ( recvMsgSize = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, sizeof(fromAddr) )) < 0 )
             {
@@ -454,8 +457,29 @@ int main( int argc, char *argv[] )
             }
             else
             {
+                printf( " client: showing members in cohort\n");
 
-                
+                for (int i = 1; i < cohort.size; i++)
+                {
+                    printf( "%s\n", cohort.cohort_member_array[i].name);
+                }
+
+                printf( " client: enter amount to transfer\n");
+                scanf("%d", &transfer_amount);
+                while (transfer_amount <= 0)
+                {
+                    printf( "client: invalid transfer amount\n");
+                    printf( " client: enter amount to transfer\n");
+                    scanf("%d", &transfer_amount);
+                }
+                printf( "client: enter the person you want to send the above amount to\n");
+                scanf("%s", &to_member);
+                while (!IsMember(to_member, cohort.cohort_member_array, cohort.size))
+                {
+                    printf( "client: member does not exist\n");
+                    printf( "client: enter the person you want to send the above amount to\n");
+                    scanf("%s", &to_member);
+                }
                 
             
 
@@ -538,4 +562,18 @@ int main( int argc, char *argv[] )
     
     close( sock );
     exit( 0 );
+}
+
+bool IsMember(char* input, struct CustomerInfo* array, int size)
+{
+    bool output = false;
+    for (int i = 1; i < size; i++)
+    {
+        if (strcmp(input, array[i].name) == 0)
+        {
+            output = true;
+            i = size;
+        }
+    }
+    return output;
 }
