@@ -34,7 +34,7 @@ int main( int argc, char *argv[] )
     double balance;
     char* client_ip_address;
     int port_to_bank;
-    int port_to_other_CustomerInfos;
+    int port_to_other_customers;
 
     int cohort_size;
 
@@ -114,11 +114,11 @@ int main( int argc, char *argv[] )
     scanf("%d", &client_ip_address);
     printf( "client: Enter your port number to the bank\n");
     scanf("%d", &port_to_bank);
-    printf( "client: Enter your port number to other CustomerInfos\n");
-    scanf("%d", &port_to_other_CustomerInfos);
+    printf( "client: Enter your port number to other customers\n");
+    scanf("%d", &port_to_other_customers);
 
     struct Cohort cohort = { "", (struct CustomerInfo*)malloc(sizeof(struct CustomerInfo)), 0}; // null cohort struct
-    struct CustomerInfo customer_info = { name, balance, client_ip_address, port_to_bank, port_to_other_CustomerInfos, false};
+    struct CustomerInfo customer_info = { name, balance, client_ip_address, port_to_bank, port_to_other_customers, false};
 
     struct Packet packet = 
     {
@@ -428,6 +428,8 @@ int main( int argc, char *argv[] )
             break;
 
             case 7:
+
+
 
             break;
 
