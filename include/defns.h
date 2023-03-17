@@ -57,4 +57,6 @@ struct P2PPacket
     struct Rollback rollback_info;
 };
 
-bool IsMember(char*, struct CustomerInfo*, int);
+// returns index of member
+// returns size of array otherwise
+int IsMember(char*, struct CustomerInfo*, int);

@@ -40,6 +40,16 @@ int main( int argc, char *argv[] )
 
     int transfer_amount;
     char* receiver;
+    char* sender;
+    int label;
+
+    int first_label_sent[2] = {0,0};
+    bool OK_to_ckpt = true;
+    bool resume_execution = true;
+    bool OK_to_roll = true;
+    int last_label_recv[2] = {0,0};
+    int last_label_sent[2] = {9999,9999};
+
 
     if (argc < 3)
     {
@@ -222,9 +232,9 @@ int main( int argc, char *argv[] )
             scanf("%s", &name);
             printf( "client: Enter the total number of people in the cohort\n");
             scanf("%d", &cohort_size);
-            while (cohort_size < 2)
+            while (cohort_size < 2 || cohort_size > 3)
             {
-                printf( "client: invalid cohort size\n" );
+                printf( "client: invalid cohort size (valid: 2-3)\n" );
                 printf( "client: Enter the total number of people in the cohort\n" );
                 scanf("%d", &cohort_size);
             }
@@ -472,18 +482,25 @@ int main( int argc, char *argv[] )
                     printf( " client: enter amount to transfer\n");
                     scanf("%d", &transfer_amount);
                 }
+
+                int receiver_index;
                 printf( "client: enter the person you want to send the above amount to\n");
                 scanf("%s", &receiver);
-                while (!IsMember(receiver, cohort.cohort_member_array, cohort.size))
+                receiver_index = IsMember(receiver, cohort.cohort_member_array, cohort.size);
+                while (receiver_index == cohort.size) // while not a member
                 {
                     printf( "client: member does not exist\n");
                     printf( "client: enter the person you want to send the above amount to\n");
                     scanf("%s", &receiver);
+                    receiver_index = IsMember(receiver, cohort.cohort_member_array, cohort.size);
                 }
 
-            
-
-
+                first_label_sent[0]++;
+                last_label_sent[0]++;
+                struct Transfer transfer = {transfer_amount, customer_info.name, receiver, first_label_sent[0]};
+                struct Checkpoint checkpoint = {0, 0};
+                struct Rollback rollback = {0, 0};
+                struct P2PPacket peer_packet = {0, transfer, checkpoint, rollback}; // transfer
 
 
 
@@ -564,14 +581,14 @@ int main( int argc, char *argv[] )
     exit( 0 );
 }
 
-bool IsMember(char* input, struct CustomerInfo* array, int size)
+int IsMember(char* input, struct CustomerInfo* array, int size)
 {
-    bool output = false;
-    for (int i = 1; i < size; i++)
+    int output = size; // not a member
+    for (int i = 0; i < size; i++)
     {
         if (strcmp(input, array[i].name) == 0)
         {
-            output = true;
+            output = i;
             i = size;
         }
     }
