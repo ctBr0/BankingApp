@@ -1,7 +1,7 @@
 // Implements the server side of an echo client-server application program.
 //
 // Compile on general.asu.edu as:
-//   g++ -o server UDPEchoServer.c
+//   gcc -g UDPServer.c -o server
 //
 // Only on general3 and general4 have the ports >= 1024 been opened for
 // application programs.
@@ -76,8 +76,6 @@ int main( int argc, char *argv[] )
         {
             DieWithError( "server: recvfrom() failed" );
         }
-
-        // printf( "%s\n", packet.command_choice);
 
         // open an account
         if (packet.command_choice == 0)

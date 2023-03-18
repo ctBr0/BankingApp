@@ -1,7 +1,7 @@
 // Implements the client side of an echo client-server application program.
 //
 // Compile on general.asu.edu as:
-//   g++ -o client UDPEchoClient.c
+//   gcc -g UDPClient.c -o client
 //
 // Only on general3 and general4 have the ports >= 1024 been opened for
 // application programs.
@@ -527,7 +527,18 @@ int main( int argc, char *argv[] )
             }
             else
             {
+                for (int i = 0; i < 3; i++)
+                {
+                    if (i != 0)
+                    {
+                        // send a take_a_tentative_ckpt message
 
+
+
+
+
+                    }
+                }
 
 
             
