@@ -490,6 +490,8 @@ int main( int argc, char *argv[] )
                 {
                     DieWithError( "client: sendto() sent a different number of bytes than expected" );
                 }
+
+                printf( "client: payment sent\n");
             }
 
             break;
