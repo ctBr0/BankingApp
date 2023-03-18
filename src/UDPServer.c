@@ -80,6 +80,7 @@ int main( int argc, char *argv[] )
         // open an account
         if (packet.command_choice == 0)
         {
+            /*
             for (int i = 0; i < num_of_customers; i++)
             {   
                 // customer already exists in the database`
@@ -89,6 +90,7 @@ int main( int argc, char *argv[] )
                     break;
                 }
             }
+            */
 
             if (failed == false)
             {
