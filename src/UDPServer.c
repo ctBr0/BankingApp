@@ -119,6 +119,7 @@ int main( int argc, char *argv[] )
         }
         else if (packet.command_choice == 3)
         {
+            /*
             // if (packet.cohort.size > num_of_customers)
             if (num_of_cohorts != 0) // check if client is already in an existing cohort
             {
@@ -140,6 +141,7 @@ int main( int argc, char *argv[] )
                     }
                 }
             }
+            */
 
             int random;
             if (failed == false)
