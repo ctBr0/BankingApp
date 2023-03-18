@@ -82,7 +82,7 @@ int main( int argc, char *argv[] )
         {
             for (int i = 0; i < num_of_customers; i++)
             {   
-                // customer already exists in the database
+                // customer already exists in the database`
                 if (strcmp(customer_database[i].name, packet.customer_info.name) == 0)
                 {
                     failed = true;

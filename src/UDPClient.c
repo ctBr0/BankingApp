@@ -33,7 +33,7 @@ int main( int argc, char *argv[] )
     unsigned int recvMsgSize;                 // Size of received message
 
     char name[10];
-    double balance;
+    int balance;
     char client_ip_address[20];
     unsigned short port_to_bank;
     unsigned short port_to_other_customers;
