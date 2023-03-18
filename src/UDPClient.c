@@ -50,8 +50,9 @@ int main( int argc, char *argv[] )
     bool OK_to_roll = true;
     int last_label_recv[3] = {0,0,0};
     int last_label_sent[3] = {9999,9999,9999};
-    char* ckpt_cohort[2] = {"", ""};
 
+    struct Checkpoint tent_checkpoint;
+    struct Checkpoint perm_checkpoint;
 
     if (argc < 3)
     {
@@ -101,9 +102,9 @@ int main( int argc, char *argv[] )
     };
 
     struct Transfer transfer = {0, "", "", 0};
-    struct Checkpoint checkpoint = {0, 0};
-    struct Rollback rollback = {0, 0};
-    struct P2PPacket peer_packet = {0, transfer, checkpoint, rollback};
+    struct CheckpointPacket checkpointPk = {0, "", "", 0};
+    struct Rollback rollback = {0, "", "", 0};
+    struct P2PPacket peer_packet = {0, transfer, checkpointPk, rollback};
 
     // Send the struct to the server
     if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &servAddr, sizeof( servAddr ) ) != sizeof(struct Packet) )
@@ -193,13 +194,57 @@ int main( int argc, char *argv[] )
                 DieWithError( "server: recvfrom() failed" );
             }
 
-            if (peer_packet.choice == 0) // receiving a transfer
+            if (peer_packet.choice == 0) // receiving a transfer message
             {
                 int sender_index = IsMember(peer_packet.transfer_info.sender, cohort.cohort_member_array, cohort.size);
                 customer_info.balance = customer_info.balance + peer_packet.transfer_info.transfer_amount;
                 last_label_recv[sender_index]++;
 
                 printf( "client: received a transfer payment\n");
+            }
+
+            if (peer_packet.choice == 1) // checkpoint message
+            {
+                if (peer_packet.checkpoint_info.action == 0) // received take_a_tentative_checkpoint message
+                {
+                    if (OK_to_ckpt == true && label >= first_label_sent[IsMember(peer_packet.checkpoint_info.sender, cohort.cohort_member_array, cohort.size)])
+                    {
+                        // take a tentative checkpoint
+                        tent_checkpoint = (struct Checkpoint)
+                        {
+                            customer_info.balance,
+                            first_label_sent,
+                            OK_to_ckpt,
+                            resume_execution,
+                            OK_to_roll,
+                            last_label_recv,
+                            last_label_sent
+                        };
+
+                        // send take_a_tentative_checkpoint message to cohort members
+
+
+
+
+
+
+
+
+                        
+
+
+                    }
+
+
+
+
+                }
+
+
+
+
+
+
             }
 
             break;
@@ -477,6 +522,7 @@ int main( int argc, char *argv[] )
                 first_label_sent[receiver_index]++;
                 last_label_sent[receiver_index]++;
                 struct Transfer transfer = {transfer_amount, customer_info.name, receiver, first_label_sent[receiver_index]};
+                peer_packet.choice = 0; // transfer
                 peer_packet.transfer_info = transfer;
 
                 // Construct the peer address structure
@@ -485,7 +531,7 @@ int main( int argc, char *argv[] )
                 toAddr.sin_addr.s_addr = inet_addr( cohort.cohort_member_array[receiver_index].client_ip_addr ); // Set peer's IP address
                 toAddr.sin_port = htons( cohort.cohort_member_array[receiver_index].port_to_other_customers );      // Set peer's port
 
-                // Send the struct to the server
+                // Send the struct to the cohort member
                 if( sendto( sock, &peer_packet, sizeof(struct P2PPacket), 0, (struct sockaddr *) &toAddr, sizeof( toAddr ) ) != sizeof(struct P2PPacket) )
                 {
                     DieWithError( "client: sendto() sent a different number of bytes than expected" );
@@ -526,14 +572,43 @@ int main( int argc, char *argv[] )
                 printf( " client: customer is not in a cohort\n");
             }
             else
-            {
+            {   
+                tent_checkpoint = (struct Checkpoint)
+                {
+                    customer_info.balance,
+                    first_label_sent,
+                    OK_to_ckpt,
+                    resume_execution,
+                    OK_to_roll,
+                    last_label_recv,
+                    last_label_sent
+                };
+
+                // send take_a_tentative_ckpt message to all members in checkpoint cohort
                 for (int i = 0; i < 3; i++)
                 {
-                    if (i != 0)
+                    if (last_label_recv[i] != 0) // in checkpoint cohort
                     {
-                        // send a take_a_tentative_ckpt message
+                        // send the message
+                        struct CheckpointPacket checkpointPk = {0 /*take_tentative*/, customer_info.name, cohort.cohort_member_array[i].name, last_label_recv[i]};
+                        peer_packet.choice = 1; // checkpoint
+                        peer_packet.checkpoint_info = checkpointPk;
 
+                        // Construct the peer address structure
+                        memset( &toAddr, 0, sizeof( toAddr ) ); // Zero out structure
+                        toAddr.sin_family = AF_INET;                  // Use internet addr family
+                        toAddr.sin_addr.s_addr = inet_addr( cohort.cohort_member_array[i].client_ip_addr ); // Set peer's IP address
+                        toAddr.sin_port = htons( cohort.cohort_member_array[i].port_to_other_customers );      // Set peer's port
 
+                        // Send the struct to the cohort member
+                        if( sendto( sock, &peer_packet, sizeof(struct P2PPacket), 0, (struct sockaddr *) &toAddr, sizeof( toAddr ) ) != sizeof(struct P2PPacket) )
+                        {
+                            DieWithError( "client: sendto() sent a different number of bytes than expected" );
+                        }
+
+                        printf( "client: take_a_tentative_checkpoint message sent\n");
+
+                        // Receive a response
 
 
 
