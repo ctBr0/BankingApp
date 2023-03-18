@@ -662,13 +662,56 @@ int main( int argc, char *argv[] )
             else
             {
 
+                printf( " client: showing members in cohort\n");
+
+                for (int i = 1; i < cohort.size; i++)
+                {
+                    printf( "%s\n", cohort.cohort_member_array[i].name);
+                }
+
+                printf( " client: enter amount to transfer\n");
+                scanf("%d", &transfer_amount);
+                while (transfer_amount <= 0)
+                {
+                    printf( "client: invalid transfer amount\n");
+                    printf( " client: enter amount to transfer\n");
+                    scanf("%d", &transfer_amount);
+                }
+
+                int receiver_index;
+                printf( "client: enter the person you want to send the above amount to\n");
+                scanf("%s", &receiver);
+                receiver_index = IsMember(receiver, cohort.cohort_member_array, cohort.size);
+                while (receiver_index == cohort.size) // while not a member
+                {
+                    printf( "client: member does not exist\n");
+                    printf( "client: enter the person you want to send the above amount to\n");
+                    scanf("%s", &receiver);
+                    receiver_index = IsMember(receiver, cohort.cohort_member_array, cohort.size);
+                }
+
+                first_label_sent[receiver_index]++;
+                last_label_sent[receiver_index]++;
+                struct Transfer transfer = {transfer_amount, customer_info.name, receiver, first_label_sent[receiver_index]};
+                peer_packet.choice = 0; // transfer
+                peer_packet.transfer_info = transfer;
+
+                // Construct the peer address structure
+                memset( &toAddr, 0, sizeof( toAddr ) ); // Zero out structure
+                toAddr.sin_family = AF_INET;                  // Use internet addr family
+                toAddr.sin_addr.s_addr = inet_addr( cohort.cohort_member_array[receiver_index].client_ip_addr ); // Set peer's IP address
+                toAddr.sin_port = htons( cohort.cohort_member_array[receiver_index].port_to_other_customers );      // Set peer's port
 
 
-            
+                // Does NOT send the struct to the cohort member
+                /*
+                if( sendto( sock, &peer_packet, sizeof(struct P2PPacket), 0, (struct sockaddr *) &toAddr, sizeof( toAddr ) ) != sizeof(struct P2PPacket) )
+                {
+                    DieWithError( "client: sendto() sent a different number of bytes than expected" );
+                }
+                */
 
-
-
-
+                printf( "client: lost transfer \"sent\"\n");
 
             }
 
