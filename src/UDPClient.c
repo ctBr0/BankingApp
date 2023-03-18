@@ -52,6 +52,7 @@ int main( int argc, char *argv[] )
     int last_label_recv[3] = {0,0,0};
     int last_label_sent[3] = {9999,9999,9999};
 
+    struct Checkpoint prev_checkpoint;
     struct Checkpoint tent_checkpoint;
     struct Checkpoint perm_checkpoint;
 
@@ -103,7 +104,7 @@ int main( int argc, char *argv[] )
     };
 
     struct Transfer transfer = {0, "", "", 0};
-    struct CheckpointPacket checkpointPk = {0, "", "", 0};
+    struct CheckpointPacket checkpointPk = {0, "", "", 0, true};
     struct Rollback rollback = {0, "", "", 0};
     struct P2PPacket peer_packet = {0, transfer, checkpointPk, rollback};
 
@@ -213,6 +214,7 @@ int main( int argc, char *argv[] )
                     if (OK_to_ckpt == true && label >= first_label_sent[IsMember(peer_packet.checkpoint_info.sender, cohort.cohort_member_array, cohort.size)])
                     {
                         // take a tentative checkpoint
+                        prev_checkpoint = tent_checkpoint;
                         tent_checkpoint = (struct Checkpoint)
                         {
                             customer_info.balance,
@@ -223,29 +225,134 @@ int main( int argc, char *argv[] )
                             last_label_recv,
                             last_label_sent
                         };
-
-                        // send take_a_tentative_checkpoint message to cohort members
-
                         
+                        bool all_OK = true;
+                        // send take_a_tentative_ckpt message to all members in checkpoint cohort
+                        for (int i = 0; i < 3; i++)
+                        {
+                            if (last_label_recv[i] != 0) // in checkpoint cohort
+                            {
+                                // send the message
+                                struct CheckpointPacket checkpointPk = {0 /*take_tentative*/, customer_info.name, cohort.cohort_member_array[i].name, last_label_recv[i], OK_to_ckpt};
+                                peer_packet.choice = 1; // checkpoint
+                                peer_packet.checkpoint_info = checkpointPk;
 
+                                // Construct the peer address structure
+                                memset( &toAddr, 0, sizeof( toAddr ) ); // Zero out structure
+                                toAddr.sin_family = AF_INET;                  // Use internet addr family
+                                toAddr.sin_addr.s_addr = inet_addr( cohort.cohort_member_array[i].client_ip_addr ); // Set peer's IP address
+                                toAddr.sin_port = htons( cohort.cohort_member_array[i].port_to_other_customers );      // Set peer's port
 
+                                // Send the struct to the cohort member
+                                if( sendto( sock, &peer_packet, sizeof(struct P2PPacket), 0, (struct sockaddr *) &toAddr, sizeof( toAddr ) ) != sizeof(struct P2PPacket) )
+                                {
+                                    DieWithError( "client: sendto() sent a different number of bytes than expected" );
+                                }
 
+                                printf( "client: take_a_tentative_checkpoint message sent\n");
 
+                                // Receive a response
 
+                                if( ( recvMsgSize = recvfrom( sock, &peer_packet, sizeof(struct P2PPacket), 0, (struct sockaddr *) &fromAddr, &fromAddrLen ) ) > sizeof(struct P2PPacket) )
+                                {
+                                    DieWithError( "client: recvfrom() failed" );
+                                }
 
+                                if (peer_packet.checkpoint_info.OK_to_ckpt == false)
+                                {
+                                    all_OK = false;
+                                }
+                            }
+                        }
 
-
+                        if (all_OK)
+                        {
+                            OK_to_ckpt = true;
+                        }
+                        else
+                        {
+                            OK_to_ckpt = false;
+                        }
 
                     }
 
-
-
+                    // send OK_to_ckpt back
+                    peer_packet.checkpoint_info.OK_to_ckpt = OK_to_ckpt;
+                    // Send the struct to the cohort member
+                    if( sendto( sock, &peer_packet, sizeof(struct P2PPacket), 0, (struct sockaddr *) &toAddr, sizeof( toAddr ) ) != sizeof(struct P2PPacket) )
+                    {
+                        DieWithError( "client: sendto() sent a different number of bytes than expected" );
+                    }
 
                 }
 
+                // receiving make_permanent message
 
+                if (peer_packet.checkpoint_info.action == 1)
+                {
+                    perm_checkpoint = tent_checkpoint;
 
+                    for (int i = 0; i < 3; i++)
+                    {
+                        if (last_label_recv[i] != 0) // in checkpoint cohort
+                        {
+                            // send the message
+                            struct CheckpointPacket checkpointPk = {1 /*make_perm*/, customer_info.name, cohort.cohort_member_array[i].name, last_label_recv[i], OK_to_ckpt};
+                            peer_packet.choice = 1; // checkpoint
+                            peer_packet.checkpoint_info = checkpointPk;
 
+                            // Construct the peer address structure
+                            memset( &toAddr, 0, sizeof( toAddr ) ); // Zero out structure
+                            toAddr.sin_family = AF_INET;                  // Use internet addr family
+                            toAddr.sin_addr.s_addr = inet_addr( cohort.cohort_member_array[i].client_ip_addr ); // Set peer's IP address
+                            toAddr.sin_port = htons( cohort.cohort_member_array[i].port_to_other_customers );      // Set peer's port
+
+                            // Send the struct to the cohort member
+                            if( sendto( sock, &peer_packet, sizeof(struct P2PPacket), 0, (struct sockaddr *) &toAddr, sizeof( toAddr ) ) != sizeof(struct P2PPacket) )
+                            {
+                                DieWithError( "client: sendto() sent a different number of bytes than expected" );
+                            }
+
+                            printf( "client: make_tentative_ckpt_permanent message sent\n");
+
+                        }
+                    }
+                
+                }
+
+                // receiving undo_ckpt message
+
+                if (peer_packet.checkpoint_info.action == 2)
+                {
+                    tent_checkpoint = prev_checkpoint;
+
+                    for (int i = 0; i < 3; i++)
+                    {
+                        if (last_label_recv[i] != 0) // in checkpoint cohort
+                        {
+                            // send the message
+                            struct CheckpointPacket checkpointPk = {2 /*undo*/, customer_info.name, cohort.cohort_member_array[i].name, last_label_recv[i], OK_to_ckpt};
+                            peer_packet.choice = 1; // checkpoint
+                            peer_packet.checkpoint_info = checkpointPk;
+
+                            // Construct the peer address structure
+                            memset( &toAddr, 0, sizeof( toAddr ) ); // Zero out structure
+                            toAddr.sin_family = AF_INET;                  // Use internet addr family
+                            toAddr.sin_addr.s_addr = inet_addr( cohort.cohort_member_array[i].client_ip_addr ); // Set peer's IP address
+                            toAddr.sin_port = htons( cohort.cohort_member_array[i].port_to_other_customers );      // Set peer's port
+
+                            // Send the struct to the cohort member
+                            if( sendto( sock, &peer_packet, sizeof(struct P2PPacket), 0, (struct sockaddr *) &toAddr, sizeof( toAddr ) ) != sizeof(struct P2PPacket) )
+                            {
+                                DieWithError( "client: sendto() sent a different number of bytes than expected" );
+                            }
+
+                            printf( "client: undo_tentative_ckpt message sent\n");
+
+                        }
+                    }
+
+                }
 
 
             }
@@ -586,14 +693,15 @@ int main( int argc, char *argv[] )
                     last_label_recv,
                     last_label_sent
                 };
-
+                
                 // send take_a_tentative_ckpt message to all members in checkpoint cohort
+                bool all_OK = true;
                 for (int i = 0; i < 3; i++)
                 {
                     if (last_label_recv[i] != 0) // in checkpoint cohort
                     {
                         // send the message
-                        struct CheckpointPacket checkpointPk = {0 /*take_tentative*/, customer_info.name, cohort.cohort_member_array[i].name, last_label_recv[i]};
+                        struct CheckpointPacket checkpointPk = {0 /*take_tentative*/, customer_info.name, cohort.cohort_member_array[i].name, last_label_recv[i], OK_to_ckpt};
                         peer_packet.choice = 1; // checkpoint
                         peer_packet.checkpoint_info = checkpointPk;
 
@@ -613,17 +721,75 @@ int main( int argc, char *argv[] )
 
                         // Receive a response
 
+                        if( ( recvMsgSize = recvfrom( sock, &peer_packet, sizeof(struct P2PPacket), 0, (struct sockaddr *) &fromAddr, &fromAddrLen ) ) > sizeof(struct P2PPacket) )
+                        {
+                            DieWithError( "client: recvfrom() failed" );
+                        }
 
+                        if (peer_packet.checkpoint_info.OK_to_ckpt == false)
+                        {
+                            all_OK = false;
+                        }
 
                     }
                 }
 
+                if (all_OK) // send make_permanent message
+                {
+                    for (int i = 0; i < 3; i++)
+                    {
+                        if (last_label_recv[i] != 0) // in checkpoint cohort
+                        {
+                            // send the message
+                            struct CheckpointPacket checkpointPk = {1 /*make_permanent*/, customer_info.name, cohort.cohort_member_array[i].name, last_label_recv[i], OK_to_ckpt};
+                            peer_packet.choice = 1; // checkpoint
+                            peer_packet.checkpoint_info = checkpointPk;
 
-            
+                            // Construct the peer address structure
+                            memset( &toAddr, 0, sizeof( toAddr ) ); // Zero out structure
+                            toAddr.sin_family = AF_INET;                  // Use internet addr family
+                            toAddr.sin_addr.s_addr = inet_addr( cohort.cohort_member_array[i].client_ip_addr ); // Set peer's IP address
+                            toAddr.sin_port = htons( cohort.cohort_member_array[i].port_to_other_customers );      // Set peer's port
 
+                            // Send the struct to the cohort member
+                            if( sendto( sock, &peer_packet, sizeof(struct P2PPacket), 0, (struct sockaddr *) &toAddr, sizeof( toAddr ) ) != sizeof(struct P2PPacket) )
+                            {
+                                DieWithError( "client: sendto() sent a different number of bytes than expected" );
+                            }
 
+                            printf( "client: make_tentative_checkpoint_permanent message sent\n");
 
+                        }
+                    }
+                }
+                else // send undo_tentative_ckpt message
+                {
+                    for (int i = 0; i < 3; i++)
+                    {
+                        if (last_label_recv[i] != 0) // in checkpoint cohort
+                        {
+                            // send the message
+                            struct CheckpointPacket checkpointPk = {2 /*undo_*/, customer_info.name, cohort.cohort_member_array[i].name, last_label_recv[i], OK_to_ckpt};
+                            peer_packet.choice = 1; // checkpoint
+                            peer_packet.checkpoint_info = checkpointPk;
 
+                            // Construct the peer address structure
+                            memset( &toAddr, 0, sizeof( toAddr ) ); // Zero out structure
+                            toAddr.sin_family = AF_INET;                  // Use internet addr family
+                            toAddr.sin_addr.s_addr = inet_addr( cohort.cohort_member_array[i].client_ip_addr ); // Set peer's IP address
+                            toAddr.sin_port = htons( cohort.cohort_member_array[i].port_to_other_customers );      // Set peer's port
+
+                            // Send the struct to the cohort member
+                            if( sendto( sock, &peer_packet, sizeof(struct P2PPacket), 0, (struct sockaddr *) &toAddr, sizeof( toAddr ) ) != sizeof(struct P2PPacket) )
+                            {
+                                DieWithError( "client: sendto() sent a different number of bytes than expected" );
+                            }
+
+                            printf( "client: undo_tentative_ckpt message sent\n");
+
+                        }
+                    }
+                }
 
             }
 

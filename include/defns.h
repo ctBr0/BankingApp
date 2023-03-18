@@ -53,6 +53,7 @@ struct CheckpointPacket
     char* sender;
     char* receiver;
     int label;
+    bool OK_to_ckpt;
 };
 
 struct Rollback
