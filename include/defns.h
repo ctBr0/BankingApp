@@ -47,12 +47,12 @@ struct Rollback
 {
     int action; // 0: Prepare to rollback, 1: Rollback, 2: Do not rollback
     int label;
-}
+};
 
 struct P2PPacket
 {
     int choice; // 0: Transfer, 1: Checkpoint, 2: Rollback
-    struct Tranfer transfer_info;
+    struct Transfer transfer_info;
     struct Checkpoint checkpoint_info;
     struct Rollback rollback_info;
 };

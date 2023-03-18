@@ -26,6 +26,7 @@ int main( int argc, char *argv[] )
     int sock;                        // Socket descriptor
     struct sockaddr_in servAddr; // Server address
     struct sockaddr_in fromAddr; 
+    struct sockaddr_in toAddr;
     unsigned short servPort;     // Echo server port
     char *servIP;                    // IP address of server
     int recvMsgSize;                 // Size of received message
@@ -43,12 +44,12 @@ int main( int argc, char *argv[] )
     char* sender;
     int label;
 
-    int first_label_sent[2] = {0,0};
+    int first_label_sent[3] = {0,0,0};
     bool OK_to_ckpt = true;
     bool resume_execution = true;
     bool OK_to_roll = true;
-    int last_label_recv[2] = {0,0};
-    int last_label_sent[2] = {9999,9999};
+    int last_label_recv[3] = {0,0,0};
+    int last_label_sent[3] = {9999,9999,9999};
 
 
     if (argc < 3)
@@ -97,6 +98,11 @@ int main( int argc, char *argv[] )
         customer_info,
         cohort // cohort is not needed here
     };
+
+    struct Transfer transfer = {0, "", "", 0};
+    struct Checkpoint checkpoint = {0, 0};
+    struct Rollback rollback = {0, 0};
+    struct P2PPacket peer_packet = {0, transfer, checkpoint, rollback};
 
     // Send the struct to the server
     if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &servAddr, sizeof( servAddr ) ) != sizeof(struct Packet) )
@@ -180,47 +186,19 @@ int main( int argc, char *argv[] )
             // Listen for packets from cohort members
             case 2:
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
             printf( "client: Listening for packets from cohort members\n");
-            if( ( recvMsgSize = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, sizeof(fromAddr) )) < 0 )
+            if( ( recvMsgSize = recvfrom( sock, &peer_packet, sizeof(struct P2PPacket), 0, (struct sockaddr *) &fromAddr, sizeof(fromAddr) )) < 0 )
             {
                 DieWithError( "server: recvfrom() failed" );
             }
 
-            if ( servAddr.sin_addr.s_addr == fromAddr.sin_addr.s_addr ) // packet is from server
+            if (peer_packet.choice == 0) // receiving a transfer
             {
-                if (strcmp(packet.command_choice,"new_cohort") == 0)
-                {
-                    cohort = packet.cohort;
-                    printf( "client: joined a cohort\n");
-                }
-                
-                if (strcmp(packet.command_choice,"delete_cohort") == 0)
-                {
-                    customer_info.in_cohort = false;
-                    cohort.cohort_member_array = (struct CustomerInfo*)malloc(sizeof(struct CustomerInfo));
-                    cohort.founder_name = "";
-                    cohort.size = 0;
-                    printf( "client: cohort disbanded\n");
-                }
-            }
-            else
-            {
-                DieWithError( "client: Error: received a packet from unknown source.\n" );
+                int sender_index = IsMember(peer_packet.transfer_info.sender, cohort.cohort_member_array, cohort.size);
+                customer_info.balance = customer_info.balance + peer_packet.transfer_info.transfer_amount;
+                last_label_recv[sender_index]++;
+
+                printf( "client: received a transfer payment\n");
             }
 
             break;
@@ -427,7 +405,7 @@ int main( int argc, char *argv[] )
                 {
                     0, // request
                     0, // status is not needed here
-                    "deposit",
+                    "withdraw",
                     customer_info,
                     cohort // cohort is not needed here
                 };
@@ -495,15 +473,22 @@ int main( int argc, char *argv[] )
                     receiver_index = IsMember(receiver, cohort.cohort_member_array, cohort.size);
                 }
 
-                first_label_sent[0]++;
-                last_label_sent[0]++;
-                struct Transfer transfer = {transfer_amount, customer_info.name, receiver, first_label_sent[0]};
-                struct Checkpoint checkpoint = {0, 0};
-                struct Rollback rollback = {0, 0};
-                struct P2PPacket peer_packet = {0, transfer, checkpoint, rollback}; // transfer
+                first_label_sent[receiver_index]++;
+                last_label_sent[receiver_index]++;
+                struct Transfer transfer = {transfer_amount, customer_info.name, receiver, first_label_sent[receiver_index]};
+                peer_packet.transfer_info = transfer;
 
+                // Construct the peer address structure
+                memset( &toAddr, 0, sizeof( toAddr ) ); // Zero out structure
+                toAddr.sin_family = AF_INET;                  // Use internet addr family
+                toAddr.sin_addr.s_addr = inet_addr( cohort.cohort_member_array[receiver_index].client_ip_addr ); // Set peer's IP address
+                toAddr.sin_port = htons( cohort.cohort_member_array[receiver_index].port_to_other_customers );      // Set peer's port
 
-
+                // Send the struct to the server
+                if( sendto( sock, &peer_packet, sizeof(struct P2PPacket), 0, (struct sockaddr *) &toAddr, sizeof( toAddr ) ) != sizeof(struct P2PPacket) )
+                {
+                    DieWithError( "client: sendto() sent a different number of bytes than expected" );
+                }
             }
 
             break;
