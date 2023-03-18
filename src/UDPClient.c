@@ -51,6 +51,7 @@ int main( int argc, char *argv[] )
     bool OK_to_roll = true;
     int last_label_recv[3] = {0,0,0};
     int last_label_sent[3] = {9999,9999,9999};
+    bool resume_execution = true;
 
     struct Checkpoint prev_checkpoint;
     struct Checkpoint tent_checkpoint;
@@ -105,7 +106,7 @@ int main( int argc, char *argv[] )
 
     struct Transfer transfer = {0, "", "", 0};
     struct CheckpointPacket checkpointPk = {0, "", "", 0, true};
-    struct Rollback rollback = {0, "", "", 0};
+    struct Rollback rollback = {0, "", "", 0, true};
     struct P2PPacket peer_packet = {0, transfer, checkpointPk, rollback};
 
     fromAddrLen = sizeof (fromAddr);
@@ -353,7 +354,144 @@ int main( int argc, char *argv[] )
                     }
 
                 }
+            }
 
+            if (peer_packet.choice == 2) // rollback message
+            {
+
+                if (peer_packet.rollback_info.action == 0) // received prep_to_roll message
+                {
+                    if (OK_to_roll && label > last_label_sent[IsMember(peer_packet.checkpoint_info.sender, cohort.cohort_member_array, cohort.size)] && resume_execution)
+                    {
+                        resume_execution = false;
+
+                        bool all_OK = true;
+                        // send prep_to_roll message to all members in rollback cohort
+                        for (int i = 0; i < 3; i++)
+                        {
+                            if (last_label_recv[i] != 0) // in rollback cohort
+                            {
+                                // send the message
+                                struct Rollback rollback = {0 /*prep*/, customer_info.name, cohort.cohort_member_array[i].name, last_label_sent[i], OK_to_roll};
+                                peer_packet.choice = 2; // rollback
+                                peer_packet.rollback_info = rollback;
+
+                                // Construct the peer address structure
+                                memset( &toAddr, 0, sizeof( toAddr ) ); // Zero out structure
+                                toAddr.sin_family = AF_INET;                  // Use internet addr family
+                                toAddr.sin_addr.s_addr = inet_addr( cohort.cohort_member_array[i].client_ip_addr ); // Set peer's IP address
+                                toAddr.sin_port = htons( cohort.cohort_member_array[i].port_to_other_customers );      // Set peer's port
+
+                                // Send the struct to the cohort member
+                                if( sendto( sock, &peer_packet, sizeof(struct P2PPacket), 0, (struct sockaddr *) &toAddr, sizeof( toAddr ) ) != sizeof(struct P2PPacket) )
+                                {
+                                    DieWithError( "client: sendto() sent a different number of bytes than expected" );
+                                }
+
+                                printf( "client: prep_to_rollback message sent\n");
+
+                                // Receive a response
+
+                                if( ( recvMsgSize = recvfrom( sock, &peer_packet, sizeof(struct P2PPacket), 0, (struct sockaddr *) &fromAddr, &fromAddrLen ) ) > sizeof(struct P2PPacket) )
+                                {
+                                    DieWithError( "client: recvfrom() failed" );
+                                }
+
+                                if (peer_packet.rollback_info.OK_to_roll == false)
+                                {
+                                    all_OK = false;
+                                }
+                            }
+                        }
+
+                        if (all_OK)
+                        {
+                            OK_to_roll = true;
+                        }
+                        else
+                        {
+                            OK_to_roll = false;
+                        }
+
+                    }
+
+                    // send ok_to_roll back
+                    peer_packet.rollback_info.OK_to_roll = OK_to_roll;
+                    // Send the struct to the cohort member
+                    if( sendto( sock, &peer_packet, sizeof(struct P2PPacket), 0, (struct sockaddr *) &toAddr, sizeof( toAddr ) ) != sizeof(struct P2PPacket) )
+                    {
+                        DieWithError( "client: sendto() sent a different number of bytes than expected" );
+                    }
+
+                }
+
+                // receiving roll_back message
+
+                if (peer_packet.rollback_info.action == 1)
+                {
+                    tent_checkpoint = perm_checkpoint; // restart from permanent checkpoint
+
+                    for (int i = 0; i < 3; i++)
+                    {
+                        if (last_label_recv[i] != 0) // in rollback cohort
+                        {
+                            // send the message
+                            struct Rollback rollback = {1 /*roll*/, customer_info.name, cohort.cohort_member_array[i].name, last_label_sent[i], OK_to_roll};
+                            peer_packet.choice = 2; // rollback
+                            peer_packet.rollback_info = rollback;
+
+                            // Construct the peer address structure
+                            memset( &toAddr, 0, sizeof( toAddr ) ); // Zero out structure
+                            toAddr.sin_family = AF_INET;                  // Use internet addr family
+                            toAddr.sin_addr.s_addr = inet_addr( cohort.cohort_member_array[i].client_ip_addr ); // Set peer's IP address
+                            toAddr.sin_port = htons( cohort.cohort_member_array[i].port_to_other_customers );      // Set peer's port
+
+                            // Send the struct to the cohort member
+                            if( sendto( sock, &peer_packet, sizeof(struct P2PPacket), 0, (struct sockaddr *) &toAddr, sizeof( toAddr ) ) != sizeof(struct P2PPacket) )
+                            {
+                                DieWithError( "client: sendto() sent a different number of bytes than expected" );
+                            }
+
+                            printf( "client: roll_back message sent\n");
+
+                        }
+                    }
+                
+                }
+
+                // receiving do_not_roll_back message
+
+                if (peer_packet.rollback_info.action == 2)
+                {
+                    resume_execution = true;
+
+                    for (int i = 0; i < 3; i++)
+                    {
+                        if (last_label_recv[i] != 0) // in rollback cohort
+                        {
+                            // send the message
+                            struct Rollback rollback = {2 /*do_not_roll*/, customer_info.name, cohort.cohort_member_array[i].name, last_label_sent[i], OK_to_roll};
+                            peer_packet.choice = 2; // rollback
+                            peer_packet.rollback_info = rollback;
+
+                            // Construct the peer address structure
+                            memset( &toAddr, 0, sizeof( toAddr ) ); // Zero out structure
+                            toAddr.sin_family = AF_INET;                  // Use internet addr family
+                            toAddr.sin_addr.s_addr = inet_addr( cohort.cohort_member_array[i].client_ip_addr ); // Set peer's IP address
+                            toAddr.sin_port = htons( cohort.cohort_member_array[i].port_to_other_customers );      // Set peer's port
+
+                            // Send the struct to the cohort member
+                            if( sendto( sock, &peer_packet, sizeof(struct P2PPacket), 0, (struct sockaddr *) &toAddr, sizeof( toAddr ) ) != sizeof(struct P2PPacket) )
+                            {
+                                DieWithError( "client: sendto() sent a different number of bytes than expected" );
+                            }
+
+                            printf( "client: do_not_rollback message sent\n");
+
+                        }
+                    }
+
+                }
 
             }
 
@@ -848,13 +986,102 @@ int main( int argc, char *argv[] )
             else
             {
 
+                // send prep_to_roll message to all members in rollback cohort
+                bool all_OK = true;
+                for (int i = 0; i < 3; i++)
+                {
+                    if (last_label_recv[i] != 0) // in rollback cohort
+                    {
+                        // send the message
+                        struct Rollback rollback = {0 /*prep*/, customer_info.name, cohort.cohort_member_array[i].name, last_label_sent[i], OK_to_roll};
+                        peer_packet.choice = 2; // rollback
+                        peer_packet.rollback_info = rollback;
 
+                        // Construct the peer address structure
+                        memset( &toAddr, 0, sizeof( toAddr ) ); // Zero out structure
+                        toAddr.sin_family = AF_INET;                  // Use internet addr family
+                        toAddr.sin_addr.s_addr = inet_addr( cohort.cohort_member_array[i].client_ip_addr ); // Set peer's IP address
+                        toAddr.sin_port = htons( cohort.cohort_member_array[i].port_to_other_customers );      // Set peer's port
 
-            
+                        // Send the struct to the cohort member
+                        if( sendto( sock, &peer_packet, sizeof(struct P2PPacket), 0, (struct sockaddr *) &toAddr, sizeof( toAddr ) ) != sizeof(struct P2PPacket) )
+                        {
+                            DieWithError( "client: sendto() sent a different number of bytes than expected" );
+                        }
 
+                        printf( "client: prepare_to_rollback message sent\n");
 
+                        // Receive a response
 
+                        if( ( recvMsgSize = recvfrom( sock, &peer_packet, sizeof(struct P2PPacket), 0, (struct sockaddr *) &fromAddr, &fromAddrLen ) ) > sizeof(struct P2PPacket) )
+                        {
+                            DieWithError( "client: recvfrom() failed" );
+                        }
 
+                        if (peer_packet.rollback_info.OK_to_roll == false)
+                        {
+                            all_OK = false;
+                        }
+
+                    }
+                }
+
+                if (all_OK) // send roll_back message
+                {
+                    for (int i = 0; i < 3; i++)
+                    {
+                        if (last_label_recv[i] != 0) // in rollback cohort
+                        {
+                            // send the message
+                            struct Rollback rollback = {1 /*roll*/, customer_info.name, cohort.cohort_member_array[i].name, last_label_recv[i], OK_to_roll};
+                            peer_packet.choice = 2; // rollback
+                            peer_packet.rollback_info = rollback;
+
+                            // Construct the peer address structure
+                            memset( &toAddr, 0, sizeof( toAddr ) ); // Zero out structure
+                            toAddr.sin_family = AF_INET;                  // Use internet addr family
+                            toAddr.sin_addr.s_addr = inet_addr( cohort.cohort_member_array[i].client_ip_addr ); // Set peer's IP address
+                            toAddr.sin_port = htons( cohort.cohort_member_array[i].port_to_other_customers );      // Set peer's port
+
+                            // Send the struct to the cohort member
+                            if( sendto( sock, &peer_packet, sizeof(struct P2PPacket), 0, (struct sockaddr *) &toAddr, sizeof( toAddr ) ) != sizeof(struct P2PPacket) )
+                            {
+                                DieWithError( "client: sendto() sent a different number of bytes than expected" );
+                            }
+
+                            printf( "client: roll_back message sent\n");
+
+                        }
+                    }
+                }
+                else // send do_not_roll message
+                {
+                    for (int i = 0; i < 3; i++)
+                    {
+                        if (last_label_recv[i] != 0) // in rollback cohort
+                        {
+                            // send the message
+                            struct Rollback rollback = {2 /*do_not_roll*/, customer_info.name, cohort.cohort_member_array[i].name, last_label_recv[i], OK_to_roll};
+                            peer_packet.choice = 2; // rollback
+                            peer_packet.rollback_info = rollback;
+
+                            // Construct the peer address structure
+                            memset( &toAddr, 0, sizeof( toAddr ) ); // Zero out structure
+                            toAddr.sin_family = AF_INET;                  // Use internet addr family
+                            toAddr.sin_addr.s_addr = inet_addr( cohort.cohort_member_array[i].client_ip_addr ); // Set peer's IP address
+                            toAddr.sin_port = htons( cohort.cohort_member_array[i].port_to_other_customers );      // Set peer's port
+
+                            // Send the struct to the cohort member
+                            if( sendto( sock, &peer_packet, sizeof(struct P2PPacket), 0, (struct sockaddr *) &toAddr, sizeof( toAddr ) ) != sizeof(struct P2PPacket) )
+                            {
+                                DieWithError( "client: sendto() sent a different number of bytes than expected" );
+                            }
+
+                            printf( "client: do_not_roll_back message sent\n");
+
+                        }
+                    }
+                }
 
             }
 

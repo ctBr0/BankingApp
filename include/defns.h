@@ -62,6 +62,7 @@ struct Rollback
     char* sender;
     char* receiver;
     int label;
+    bool OK_to_roll;
 };
 
 struct P2PPacket
