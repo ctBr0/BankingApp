@@ -67,7 +67,7 @@ struct P2PPacket
 {
     int choice; // 0: Transfer, 1: Checkpoint, 2: Rollback
     struct Transfer transfer_info;
-    struct CheckpointPk checkpoint_info;
+    struct CheckpointPacket checkpoint_info;
     struct Rollback rollback_info;
 };
 
@@ -80,7 +80,7 @@ struct Checkpoint
     bool OK_to_roll;
     int last_label_recv[3];
     int last_label_sent[3];
-}
+};
 
 // returns index of member
 // returns size of array otherwise
