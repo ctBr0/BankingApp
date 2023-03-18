@@ -15,9 +15,9 @@
 
 struct CustomerInfo
 {
-    char* name;
+    char name[10];
     int balance;
-    char* client_ip_addr;
+    char client_ip_addr[20];
     unsigned short port_to_bank;
     unsigned short port_to_other_customers;
     bool in_cohort;

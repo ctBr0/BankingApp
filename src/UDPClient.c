@@ -32,11 +32,11 @@ int main( int argc, char *argv[] )
     char *servIP;                    // IP address of server
     unsigned int recvMsgSize;                 // Size of received message
 
-    char* name;
+    char name[10];
     double balance;
-    char* client_ip_address;
-    int port_to_bank;
-    int port_to_other_customers;
+    char client_ip_address[20];
+    unsigned short port_to_bank;
+    unsigned short port_to_other_customers;
 
     int cohort_size;
 
@@ -51,7 +51,6 @@ int main( int argc, char *argv[] )
     bool OK_to_roll = true;
     int last_label_recv[3] = {0,0,0};
     int last_label_sent[3] = {9999,9999,9999};
-    bool resume_execution = true;
 
     struct Checkpoint prev_checkpoint;
     struct Checkpoint tent_checkpoint;
