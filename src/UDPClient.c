@@ -27,9 +27,10 @@ int main( int argc, char *argv[] )
     struct sockaddr_in servAddr; // Server address
     struct sockaddr_in fromAddr; 
     struct sockaddr_in toAddr;
+    unsigned int fromAddrLen;
     unsigned short servPort;     // Echo server port
     char *servIP;                    // IP address of server
-    int recvMsgSize;                 // Size of received message
+    unsigned int recvMsgSize;                 // Size of received message
 
     char* name;
     double balance;
@@ -106,6 +107,8 @@ int main( int argc, char *argv[] )
     struct Rollback rollback = {0, "", "", 0};
     struct P2PPacket peer_packet = {0, transfer, checkpointPk, rollback};
 
+    fromAddrLen = sizeof (fromAddr);
+
     // Send the struct to the server
     if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &servAddr, sizeof( servAddr ) ) != sizeof(struct Packet) )
     {
@@ -114,7 +117,7 @@ int main( int argc, char *argv[] )
 
     // Receive a response
 
-    if( ( recvMsgSize = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, sizeof( fromAddr ) ) ) > sizeof(struct Packet) )
+    if( ( recvMsgSize = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, &fromAddrLen ) ) > sizeof(struct Packet) )
         DieWithError( "client: recvfrom() failed" );
 
     if( servAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr ) // from server
@@ -230,7 +233,7 @@ int main( int argc, char *argv[] )
 
 
 
-                        
+
 
 
                     }
@@ -412,7 +415,7 @@ int main( int argc, char *argv[] )
 
                 // Receive a response
 
-                if( ( recvMsgSize = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, sizeof( fromAddr ) ) ) > sizeof(struct Packet) )
+                if( ( recvMsgSize = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, &fromAddrLen ) ) > sizeof(struct Packet) )
                     DieWithError( "client: recvfrom() failed" );
 
                 if( servAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr ) // from server
@@ -464,7 +467,7 @@ int main( int argc, char *argv[] )
 
                 // Receive a response
 
-                if( ( recvMsgSize = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, sizeof( fromAddr ) ) ) > sizeof(struct Packet) )
+                if( ( recvMsgSize = recvfrom( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &fromAddr, &fromAddrLen ) ) > sizeof(struct Packet) )
                     DieWithError( "client: recvfrom() failed" );
 
                 if( servAddr.sin_addr.s_addr != fromAddr.sin_addr.s_addr ) // from server
