@@ -63,8 +63,11 @@ int main( int argc, char *argv[] )
 
     num_of_customers = 0;
     num_of_cohorts = 0;
-    customer_database = (struct CustomerInfo*)malloc(num_of_customers * sizeof(struct CustomerInfo));
-    cohort_database = (struct Cohort*)malloc(num_of_cohorts * sizeof(struct Cohort));
+    // customer_database = (struct CustomerInfo*)malloc(num_of_customers * sizeof(struct CustomerInfo));
+    customer_database = (struct CustomerInfo*)malloc(5 * sizeof(struct CustomerInfo));
+
+    //cohort_database = (struct Cohort*)malloc(num_of_cohorts * sizeof(struct Cohort));
+    cohort_database = (struct Cohort*)malloc(2 * sizeof(struct Cohort));
 
     for(;;) // Run forever
     {
@@ -94,7 +97,7 @@ int main( int argc, char *argv[] )
 
             if (failed == false)
             {
-                customer_database = (struct CustomerInfo*)realloc(customer_database, sizeof(customer_database) + sizeof(struct CustomerInfo));
+                //customer_database = (struct CustomerInfo*)realloc(customer_database, sizeof(customer_database) + sizeof(struct CustomerInfo));
                 customer_database[num_of_customers] = packet.customer_info;
                 num_of_customers++;
 
@@ -159,7 +162,7 @@ int main( int argc, char *argv[] )
                         if (customer_database[random].in_cohort == false) // valid
                         {
                             customer_database[random].in_cohort = true; // updating the database
-                            packet.cohort.cohort_member_array = (struct CustomerInfo*)realloc(packet.cohort.cohort_member_array, sizeof(packet.cohort.cohort_member_array) + sizeof(struct CustomerInfo));
+                            //packet.cohort.cohort_member_array = (struct CustomerInfo*)realloc(packet.cohort.cohort_member_array, sizeof(packet.cohort.cohort_member_array) + sizeof(struct CustomerInfo));
                             packet.cohort.cohort_member_array[i + 1] = customer_database[random]; // add new cohort member to the packet.cohort
                             valid = true;
                         }
@@ -254,7 +257,7 @@ int main( int argc, char *argv[] )
                     {
                         cohort_database[i] = cohort_database[num_of_cohorts - 1];
                         num_of_cohorts--;
-                        cohort_database = (struct Cohort*)realloc(cohort_database, num_of_cohorts * sizeof(struct Cohort));
+                        //cohort_database = (struct Cohort*)realloc(cohort_database, num_of_cohorts * sizeof(struct Cohort));
 
                         i = num_of_cohorts;
                     }
@@ -298,7 +301,7 @@ int main( int argc, char *argv[] )
                     {
                         customer_database[i] = customer_database[num_of_customers - 1];
                         num_of_customers--;
-                        customer_database = (struct CustomerInfo*)realloc(customer_database, num_of_customers * sizeof(struct CustomerInfo));
+                        //customer_database = (struct CustomerInfo*)realloc(customer_database, num_of_customers * sizeof(struct CustomerInfo));
 
                         i = num_of_customers;
                     }
