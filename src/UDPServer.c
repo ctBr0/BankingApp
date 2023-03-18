@@ -67,7 +67,7 @@ int main( int argc, char *argv[] )
     customer_database = (struct CustomerInfo*)malloc(5 * sizeof(struct CustomerInfo));
 
     //cohort_database = (struct Cohort*)malloc(num_of_cohorts * sizeof(struct Cohort));
-    cohort_database = (struct Cohort*)malloc(2 * sizeof(struct Cohort));
+    cohort_database = (struct Cohort*)malloc(3 * sizeof(struct Cohort));
 
     for(;;) // Run forever
     {
