@@ -117,7 +117,7 @@ int main( int argc, char *argv[] )
                     DieWithError( "server: sendto() sent a different number of bytes than expected" );
             }
         }
-        else if (strcmp(packet.command_choice,"new_cohort") == 0)
+        else if (packet.command_choice == 3)
         {
             // if (packet.cohort.size > num_of_customers)
             if (num_of_cohorts != 0) // check if client is already in an existing cohort
@@ -198,7 +198,7 @@ int main( int argc, char *argv[] )
             }
 
         }
-        else if (strcmp(packet.command_choice,"delete_cohort") == 0)
+        else if (packet.command_choice == 4)
         {
             if (packet.customer_info.in_cohort == false) // not in cohort
             {
@@ -280,7 +280,7 @@ int main( int argc, char *argv[] )
                     DieWithError( "server: sendto() sent a different number of bytes than expected" );
             }
         }
-        else if (strcmp(packet.command_choice,"exit") == 0)
+        else if (packet.command_choice == 5)
         {
             if (packet.customer_info.in_cohort == true)
             {
@@ -322,7 +322,7 @@ int main( int argc, char *argv[] )
 
             }
         }
-        else if (strcmp(packet.command_choice,"deposit") == 0 || strcmp(packet.command_choice,"withdrawal") == 0)
+        else if (packet.command_choice == 6 || packet.command_choice == 7)
         {
             // Modify customer info in database
             for (int i = 0; i < num_of_customers; i++)

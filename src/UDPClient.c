@@ -162,13 +162,13 @@ int main( int argc, char *argv[] )
 
             if ( servAddr.sin_addr.s_addr == fromAddr.sin_addr.s_addr ) // packet is from server
             {
-                if (strcmp(packet.command_choice,"new_cohort") == 0)
+                if (packet.command_choice == 3)
                 {
                     cohort = packet.cohort;
                     printf( "client: joined a cohort\n");
                 }
                 
-                if (strcmp(packet.command_choice,"delete_cohort") == 0)
+                if (packet.command_choice == 4)
                 {
                     customer_info.in_cohort = false;
                     cohort.cohort_member_array = (struct CustomerInfo*)malloc(sizeof(struct CustomerInfo));
@@ -225,7 +225,7 @@ int main( int argc, char *argv[] )
             {
                 0,
                 0,
-                "new_cohort",
+                3,
                 customer_info,
                 cohort
             };
@@ -265,7 +265,7 @@ int main( int argc, char *argv[] )
             {
                 0,
                 0,
-                "delete_cohort",
+                4,
                 customer_info,
                 cohort
             };
@@ -303,7 +303,7 @@ int main( int argc, char *argv[] )
             {
                 0,
                 0,
-                "exit",
+                5,
                 customer_info,
                 cohort
             };
@@ -354,7 +354,7 @@ int main( int argc, char *argv[] )
                 {
                     0, // request
                     0, // status is not needed here
-                    "deposit",
+                    6,
                     customer_info,
                     cohort // cohort is not needed here
                 };
@@ -406,7 +406,7 @@ int main( int argc, char *argv[] )
                 {
                     0, // request
                     0, // status is not needed here
-                    "withdraw",
+                    7,
                     customer_info,
                     cohort // cohort is not needed here
                 };

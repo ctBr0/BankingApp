@@ -12,10 +12,6 @@
 #define DELETEACCOUNT 5
 #define DEPOSIT 6
 #define WITHDRAW 7
-#define TRANSFER 8
-#define LOSTTRANSFER 9
-#define CHECKPOINT 10
-#define ROLLBACK 11
 
 struct CustomerInfo
 {
