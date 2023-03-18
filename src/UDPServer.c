@@ -120,7 +120,7 @@ int main( int argc, char *argv[] )
                     DieWithError( "server: sendto() sent a different number of bytes than expected" );
             }
         }
-        else if (packet.command_choice == 3)
+        else if (packet.command_choice == 3) // create cohort
         {
             /*
             // if (packet.cohort.size > num_of_customers)
@@ -203,7 +203,7 @@ int main( int argc, char *argv[] )
             }
 
         }
-        else if (packet.command_choice == 4)
+        else if (packet.command_choice == 4) // delete cohort
         {
             if (packet.customer_info.in_cohort == false) // not in cohort
             {
@@ -285,7 +285,7 @@ int main( int argc, char *argv[] )
                     DieWithError( "server: sendto() sent a different number of bytes than expected" );
             }
         }
-        else if (packet.command_choice == 5)
+        else if (packet.command_choice == 5) // delete account
         {
             if (packet.customer_info.in_cohort == true)
             {
