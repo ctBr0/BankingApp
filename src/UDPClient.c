@@ -50,6 +50,7 @@ int main( int argc, char *argv[] )
     bool OK_to_roll = true;
     int last_label_recv[3] = {0,0,0};
     int last_label_sent[3] = {9999,9999,9999};
+    char* ckpt_cohort[2] = {"", ""};
 
 
     if (argc < 3)
@@ -94,7 +95,7 @@ int main( int argc, char *argv[] )
     {
         htons(0), // request
         htons(0), // status is not needed here
-        "open",
+        0, // open
         customer_info,
         cohort // cohort is not needed here
     };

@@ -3,6 +3,20 @@
 #define SUCCESS 1
 #define FAILURE 0
 
+// packet.command_choice
+#define OPENACCOUNT 0
+#define LISTENSERVER 1
+#define LISTENCOHORT 2
+#define CREATECOHORT 3
+#define DELETECOHORT 4
+#define DELETEACCOUNT 5
+#define DEPOSIT 6
+#define WITHDRAW 7
+#define TRANSFER 8
+#define LOSTTRANSFER 9
+#define CHECKPOINT 10
+#define ROLLBACK 11
+
 struct CustomerInfo
 {
     char* name;
@@ -24,7 +38,7 @@ struct Packet
 {
     unsigned short req_res; // request = 0, response = 1
     unsigned short succ_fail; // success = 0, failure = 1
-    char* command_choice; // eg. "open", "new_cohort"
+    int command_choice; // eg. "open", "new_cohort"
     struct CustomerInfo customer_info;
     struct Cohort cohort;
 };

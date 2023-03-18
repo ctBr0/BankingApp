@@ -80,7 +80,7 @@ int main( int argc, char *argv[] )
         // printf( "%s\n", packet.command_choice);
 
         // open an account
-        if (strcmp(packet.command_choice,"open") == 0)
+        if (packet.command_choice == 0)
         {
             for (int i = 0; i < num_of_customers; i++)
             {   
@@ -196,7 +196,7 @@ int main( int argc, char *argv[] )
                 if( sendto( sock, &packet, sizeof(struct Packet), 0, (struct sockaddr *) &clientAddr, sizeof( clientAddr ) ) != sizeof(struct Packet) )
                     DieWithError( "server: sendto() sent a different number of bytes than expected" );
             }
-            
+
         }
         else if (strcmp(packet.command_choice,"delete_cohort") == 0)
         {
