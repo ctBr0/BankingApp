@@ -1,10 +1,7 @@
 // Implements the server side of an echo client-server application program.
 //
-// Compile on general.asu.edu as:
-//   gcc -g UDPServer.c -o server
+// Compile as:
 //
-// Only on general3 and general4 have the ports >= 1024 been opened for
-// application programs.
 #include <stdio.h>      // for printf() and fprintf()
 #include <stdbool.h>
 #include <time.h>

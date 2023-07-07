@@ -1,10 +1,8 @@
 // Implements the client side of an echo client-server application program.
 //
-// Compile on general.asu.edu as:
+// Compile as:
 //   gcc -g UDPClient.c -o client
 //
-// Only on general3 and general4 have the ports >= 1024 been opened for
-// application programs.
 #include <stdio.h> 
 #include <stdbool.h>     // for printf() and fprintf()
 #include <sys/socket.h> // for socket(), connect(), sendto(), and recvfrom()
